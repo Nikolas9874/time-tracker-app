@@ -114,18 +114,36 @@ export function getCurrentUser(token: string): User | null {
 }
 
 // Проверка авторизации в API запросах
-export async function verifyAuth(request: Request): Promise<{ success: boolean; user?: User }> {
+export async function verifyAuth(
+  request: Request, 
+  options?: { requireAuth?: boolean }
+): Promise<{ success: boolean; user?: User }> {
   try {
     // Извлекаем токен из заголовка Authorization
     const authHeader = request.headers.get('Authorization');
     
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return { success: false };
+    // Проверяем наличие токена в куки
+    const cookieHeader = request.headers.get('Cookie');
+    let token = null;
+    
+    // Ищем токен в заголовке Authorization
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } 
+    // Ищем токен в куки
+    else if (cookieHeader) {
+      const cookieMatch = cookieHeader.match(/authToken=([^;]+)/);
+      if (cookieMatch && cookieMatch[1]) {
+        token = cookieMatch[1];
+      }
     }
     
-    const token = authHeader.split(' ')[1];
-    
+    // Если токен не найден, проверяем, требуется ли авторизация
     if (!token) {
+      // Если авторизация необязательна, возвращаем успех без пользователя
+      if (options?.requireAuth === false) {
+        return { success: true };
+      }
       return { success: false };
     }
     
@@ -133,6 +151,10 @@ export async function verifyAuth(request: Request): Promise<{ success: boolean; 
     const user = getCurrentUser(token);
     
     if (!user) {
+      // Если авторизация необязательна, возвращаем успех без пользователя
+      if (options?.requireAuth === false) {
+        return { success: true };
+      }
       return { success: false };
     }
     

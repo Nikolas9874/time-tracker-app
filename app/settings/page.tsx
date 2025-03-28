@@ -4,6 +4,147 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/AuthContext';
 
+// Интерфейс для коммита
+interface Commit {
+  hash: string;
+  date: string;
+  message: string;
+  author: string;
+}
+
+// Компонент для отображения истории коммитов
+const CommitHistory: React.FC<{ onRollback: (hash: string) => void }> = ({ onRollback }) => {
+  const [commits, setCommits] = useState<Commit[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { token } = useAuth();
+  
+  // Загрузка истории коммитов
+  const fetchCommits = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Получаем токен из контекста или localStorage
+      const authToken = token || localStorage.getItem('auth_token');
+      
+      const response = await fetch('/api/update/history', {
+        headers: {
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setError('API маршрут истории коммитов не найден');
+        } else {
+          throw new Error(`Ошибка при загрузке истории коммитов: ${response.status}`);
+        }
+        return;
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.commits) {
+        setCommits(data.commits);
+      } else {
+        setError(data.error || 'Не удалось получить историю коммитов');
+      }
+    } catch (err: any) {
+      console.error('Ошибка при загрузке истории коммитов:', err);
+      setError(err.message || 'Не удалось загрузить историю коммитов');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Загружаем историю коммитов при монтировании компонента
+  useEffect(() => {
+    fetchCommits();
+  }, [token]);
+  
+  if (isLoading) {
+    return <div className="text-center text-gray-600 p-4">Загрузка истории коммитов...</div>;
+  }
+  
+  if (error) {
+    return (
+      <div className="mt-4 border dark:border-gray-700 rounded-md overflow-hidden">
+        <h4 className="text-md font-medium p-3 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
+          История версий
+        </h4>
+        <div className="p-4 text-center text-red-500">
+          {error}
+          <div className="mt-2">
+            <button 
+              onClick={fetchCommits} 
+              className="px-3 py-1 text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-100 dark:hover:bg-blue-700 rounded-md transition-colors"
+            >
+              Повторить попытку
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  if (commits.length === 0) {
+    return (
+      <div className="mt-4 border dark:border-gray-700 rounded-md overflow-hidden">
+        <h4 className="text-md font-medium p-3 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
+          История версий
+        </h4>
+        <div className="p-4 text-center text-gray-600 dark:text-gray-400">
+          История коммитов не найдена
+          <div className="mt-2">
+            <button 
+              onClick={fetchCommits} 
+              className="px-3 py-1 text-xs bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-800 dark:text-blue-100 dark:hover:bg-blue-700 rounded-md transition-colors"
+            >
+              Обновить
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="mt-4 border dark:border-gray-700 rounded-md overflow-hidden">
+      <h4 className="text-md font-medium p-3 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700">
+        История версий
+      </h4>
+      <div className="max-h-64 overflow-y-auto">
+        {commits.map((commit, index) => (
+          <div 
+            key={commit.hash} 
+            className={`p-3 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex justify-between items-center`}
+          >
+            <div className="flex-1">
+              <div className="flex items-center space-x-2">
+                <span className="text-xs font-mono text-gray-500 dark:text-gray-400">{commit.hash.slice(0, 7)}</span>
+                <span className="text-sm font-medium">{commit.message}</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1 flex items-center space-x-2">
+                <span>{commit.author}</span>
+                <span>•</span>
+                <span>{new Date(commit.date).toLocaleString()}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => onRollback(commit.hash)}
+              className="text-xs bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-800 dark:text-amber-100 dark:hover:bg-amber-700 px-2 py-1 rounded-md transition-colors"
+            >
+              Откатиться
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const SettingsPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -15,7 +156,7 @@ const SettingsPage = () => {
   const [isBackupLoading, setIsBackupLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(false);
   
-  const { user, error, changePassword } = useAuth();
+  const { user, error: authError, changePassword, token } = useAuth();
   const router = useRouter();
   
   // Перенаправляем на страницу входа, если пользователь не авторизован
@@ -27,10 +168,10 @@ const SettingsPage = () => {
   
   // Обновляем ошибку из контекста авторизации
   useEffect(() => {
-    if (error) {
-      setFormError(error);
+    if (authError) {
+      setFormError(authError);
     }
-  }, [error]);
+  }, [authError]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,6 +360,76 @@ const SettingsPage = () => {
     }
   };
   
+  // Добавляем новую функцию для отката к предыдущей версии
+  const handleRollback = async (commitHash: string) => {
+    if (!window.confirm(`Вы уверены, что хотите откатиться к версии ${commitHash.slice(0, 7)}? Это может привести к потере несохраненных изменений.`)) {
+      return;
+    }
+    
+    try {
+      setIsDataLoading(true);
+      setFormError(null);
+      setSuccessMessage(null);
+      
+      // Получаем токен из контекста или localStorage
+      const authToken = token || localStorage.getItem('auth_token');
+      
+      const response = await fetch('/api/update/rollback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify({ commitHash }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Ошибка при откате приложения: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setSuccessMessage(`Приложение успешно откачено к версии ${commitHash.slice(0, 7)}`);
+        
+        // Предлагаем перезагрузить страницу через 3 секунды
+        setTimeout(() => {
+          if (window.confirm('Приложение откачено к предыдущей версии. Перезагрузить страницу для применения изменений?')) {
+            window.location.reload();
+          }
+        }, 3000);
+      } else {
+        setFormError(result.error || 'Не удалось откатить приложение');
+      }
+    } catch (err: any) {
+      console.error('Ошибка при откате приложения:', err);
+      setFormError(err.message || 'Не удалось откатить приложение');
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
+  
+  // Функция для обновления истории коммитов
+  const fetchCommitHistory = async () => {
+    try {
+      // Получаем токен из контекста или localStorage
+      const authToken = token || localStorage.getItem('auth_token');
+      
+      await fetch('/api/update/history', {
+        headers: {
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        credentials: 'include'
+      });
+      
+      // Результат обрабатывается в компоненте CommitHistory
+    } catch (error) {
+      console.error('Ошибка при обновлении истории коммитов:', error);
+    }
+  };
+  
   if (!user) {
     return null; // Не отображаем страницу, пока не проверим авторизацию
   }
@@ -360,7 +571,7 @@ const SettingsPage = () => {
           
           {/* Обновление приложения из Git */}
           {user && user.role === 'ADMIN' && (
-            <div>
+            <div className="mb-6">
               <h3 className="text-lg font-medium mb-2">Обновление приложения</h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
                 Обновите приложение из репозитория GitHub.
@@ -373,19 +584,40 @@ const SettingsPage = () => {
                     setFormError(null);
                     setSuccessMessage(null);
                     
+                    // Получаем токен из контекста или localStorage
+                    const authToken = token || localStorage.getItem('auth_token');
+                    
                     const response = await fetch('/api/update', {
                       method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+                      },
+                      credentials: 'include'
                     });
                     
                     if (!response.ok) {
-                      throw new Error(`Ошибка при обновлении приложения: ${response.status}`);
+                      const errorData = await response.json().catch(() => ({}));
+                      throw new Error(errorData.error || `Ошибка при обновлении приложения: ${response.status}`);
                     }
                     
                     const result = await response.json();
                     if (result.success) {
                       setSuccessMessage(result.message);
+                      
+                      // Если было обновление, предлагаем перезагрузить страницу через 3 секунды
+                      if (result.updated) {
+                        setTimeout(() => {
+                          if (window.confirm('Приложение обновлено. Перезагрузить страницу для применения изменений?')) {
+                            window.location.reload();
+                          }
+                        }, 3000);
+                        
+                        // Обновить список коммитов, если было обновление
+                        fetchCommitHistory();
+                      }
                     } else {
-                      setFormError('Не удалось обновить приложение');
+                      setFormError(result.error || 'Не удалось обновить приложение');
                     }
                   } catch (err: any) {
                     console.error('Ошибка при обновлении приложения:', err);
@@ -395,10 +627,13 @@ const SettingsPage = () => {
                   }
                 }}
                 disabled={isDataLoading}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 dark:bg-purple-700 dark:hover:bg-purple-600"
+                className="w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 dark:bg-purple-700 dark:hover:bg-purple-600 mb-4"
               >
                 {isDataLoading ? 'Обновление приложения...' : 'Обновить приложение'}
               </button>
+              
+              {/* История коммитов и откат */}
+              <CommitHistory onRollback={(hash) => handleRollback(hash)} />
             </div>
           )}
         </div>
