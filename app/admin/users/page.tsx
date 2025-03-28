@@ -17,6 +17,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
   const [userData, setUserData] = useState<Partial<User>>({
     name: '',
     email: '',
+    username: '',
     role: 'USER' as UserRole,
   });
   
@@ -25,6 +26,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
       setUserData({
         name: user.name,
         email: user.email,
+        username: user.username,
         role: user.role,
       });
     }
@@ -54,11 +56,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
             </label>
             <input
               type="text"
-              disabled
-              value={user.username}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+              name="username"
+              value={userData.username || user.username}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />
-            <p className="text-xs text-gray-500 mt-1">Имя пользователя нельзя изменить</p>
+            <p className="text-xs text-gray-500 mt-1">Логин пользователя для входа в систему</p>
           </div>
           
           <div className="mb-4">
@@ -82,11 +85,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
             <input
               type="email"
               name="email"
-              value={userData.email}
+              value={userData.email || ''}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              required
             />
+            <p className="text-xs text-gray-500 mt-1">Email не обязателен для заполнения</p>
           </div>
           
           <div className="mb-6">
