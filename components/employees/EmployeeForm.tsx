@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Employee } from '@/lib/types'
 import Button from '../ui/Button'
 
@@ -13,24 +13,52 @@ const EmployeeForm = ({ employee, onSubmit, onCancel }: EmployeeFormProps) => {
   const [position, setPosition] = useState(employee?.position || '')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [nameError, setNameError] = useState<string | null>(null)
+  const [positionError, setPositionError] = useState<string | null>(null)
+
+  useEffect(() => {
+    // Сброс ошибок при изменении полей
+    if (name.trim()) setNameError(null);
+    if (position.trim()) setPositionError(null);
+  }, [name, position]);
+  
+  const validateForm = (): boolean => {
+    let isValid = true;
+    
+    if (!name.trim()) {
+      setNameError('Необходимо указать ФИО сотрудника');
+      isValid = false;
+    }
+    
+    if (!position.trim()) {
+      setPositionError('Необходимо указать должность');
+      isValid = false;
+    }
+    
+    return isValid;
+  };
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    // Сброс ошибок
+    setError(null)
+    setNameError(null)
+    setPositionError(null)
+    
     // Проверка заполнения полей
-    if (!name.trim() || !position.trim()) {
-      setError('Необходимо заполнить все поля')
-      return
-    }
+    if (!validateForm()) return;
     
     setIsLoading(true)
-    setError(null)
     
     try {
-      await onSubmit({ name, position })
+      await onSubmit({ 
+        name: name.trim(), 
+        position: position.trim() 
+      })
     } catch (error) {
       console.error('Error submitting employee form:', error)
-      setError('Произошла ошибка при сохранении данных')
+      setError(error instanceof Error ? error.message : 'Произошла ошибка при сохранении данных')
     } finally {
       setIsLoading(false)
     }
@@ -56,9 +84,12 @@ const EmployeeForm = ({ employee, onSubmit, onCancel }: EmployeeFormProps) => {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`w-full rounded-md border ${nameError ? 'border-red-500' : 'border-gray-300'} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
           placeholder="Иванов Иван Иванович"
         />
+        {nameError && (
+          <p className="mt-1 text-sm text-red-500">{nameError}</p>
+        )}
       </div>
       
       <div className="mb-4">
@@ -69,9 +100,12 @@ const EmployeeForm = ({ employee, onSubmit, onCancel }: EmployeeFormProps) => {
           type="text"
           value={position}
           onChange={(e) => setPosition(e.target.value)}
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className={`w-full rounded-md border ${positionError ? 'border-red-500' : 'border-gray-300'} px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500`}
           placeholder="Разработчик"
         />
+        {positionError && (
+          <p className="mt-1 text-sm text-red-500">{positionError}</p>
+        )}
       </div>
       
       <div className="flex justify-end gap-2">

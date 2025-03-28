@@ -74,9 +74,13 @@ export async function GET(request: NextRequest) {
 // POST /api/employees - создать нового сотрудника
 export async function POST(request: NextRequest) {
   try {
+    console.log('Начало обработки POST запроса для создания сотрудника')
     const data = await request.json()
     
+    console.log('Получены данные:', JSON.stringify(data))
+    
     if (!data.name || !data.position) {
+      console.log('Ошибка: отсутствует имя или должность')
       return NextResponse.json(
         { error: 'Name and position are required' },
         { status: 400 }
@@ -85,8 +89,8 @@ export async function POST(request: NextRequest) {
     
     const employee: Employee = {
       id: uuidv4(),
-      name: data.name,
-      position: data.position,
+      name: data.name.trim(),
+      position: data.position.trim(),
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -140,20 +144,27 @@ export async function DELETE(request: NextRequest) {
 
 // PUT /api/employees/:id - обновить данные сотрудника
 export async function PUT(request: NextRequest) {
-  const url = new URL(request.url)
-  const id = url.pathname.split('/').pop()
-  
-  if (!id) {
-    return NextResponse.json(
-      { error: 'Employee ID is required' },
-      { status: 400 }
-    )
-  }
-  
   try {
+    console.log('Начало обработки PUT запроса для обновления сотрудника')
+    const url = new URL(request.url)
+    const pathParts = url.pathname.split('/')
+    const id = pathParts[pathParts.length - 1]
+    
+    console.log(`Обновление сотрудника с ID: ${id}, путь: ${url.pathname}`)
+    
+    if (!id) {
+      console.log('Ошибка: ID сотрудника отсутствует')
+      return NextResponse.json(
+        { error: 'Employee ID is required' },
+        { status: 400 }
+      )
+    }
+    
     const data = await request.json()
+    console.log('Получены данные для обновления:', JSON.stringify(data))
     
     if (!data.name || !data.position) {
+      console.log('Ошибка: отсутствует имя или должность')
       return NextResponse.json(
         { error: 'Name and position are required' },
         { status: 400 }
@@ -163,6 +174,7 @@ export async function PUT(request: NextRequest) {
     const index = employeesData.findIndex(emp => emp.id === id)
     
     if (index === -1) {
+      console.log(`Сотрудник с ID ${id} не найден`)
       return NextResponse.json(
         { error: 'Employee not found' },
         { status: 404 }
@@ -172,8 +184,8 @@ export async function PUT(request: NextRequest) {
     // Обновляем данные сотрудника
     const updated: Employee = {
       ...employeesData[index],
-      name: data.name,
-      position: data.position,
+      name: data.name.trim(),
+      position: data.position.trim(),
       updatedAt: new Date()
     }
     

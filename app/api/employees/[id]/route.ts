@@ -1,5 +1,6 @@
-import { prisma } from '@/lib/prisma'
 import { NextRequest, NextResponse } from 'next/server'
+import path from 'path'
+import fs from 'fs'
 
 interface Params {
   params: {
@@ -7,14 +8,49 @@ interface Params {
   }
 }
 
+// Функция для загрузки данных сотрудников из файла
+const getEmployeesData = () => {
+  try {
+    const dataFilePath = path.join(process.cwd(), 'employees_data.json')
+    
+    if (fs.existsSync(dataFilePath)) {
+      const data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'))
+      if (Array.isArray(data)) {
+        return data.map((emp: any) => ({
+          ...emp,
+          createdAt: new Date(emp.createdAt),
+          updatedAt: new Date(emp.updatedAt)
+        }))
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка чтения данных сотрудников:', error)
+  }
+  
+  return []
+}
+
+// Функция для сохранения данных в файл
+const saveEmployeesToFile = (employees: any[]) => {
+  try {
+    const dataFilePath = path.join(process.cwd(), 'employees_data.json')
+    fs.writeFileSync(dataFilePath, JSON.stringify(employees, null, 2), 'utf8')
+    console.log(`Сохранено ${employees.length} сотрудников в файл`)
+    return true
+  } catch (error) {
+    console.error('Ошибка сохранения сотрудников в файл:', error)
+    return false
+  }
+}
+
 // GET /api/employees/[id] - получить сотрудника по ID
 export async function GET(request: NextRequest, { params }: Params) {
   try {
     const { id } = params
-    const employee = await prisma.employee.findUnique({
-      where: { id },
-      include: { workDays: true }
-    })
+    console.log(`Запрос сотрудника по ID: ${id}`)
+    
+    const employees = getEmployeesData()
+    const employee = employees.find(emp => emp.id === id)
     
     if (!employee) {
       return NextResponse.json(
@@ -33,11 +69,72 @@ export async function GET(request: NextRequest, { params }: Params) {
   }
 }
 
-// PATCH /api/employees/[id] - обновить сотрудника
+// PUT /api/employees/[id] - обновить сотрудника
+export async function PUT(request: NextRequest, { params }: Params) {
+  try {
+    const { id } = params
+    console.log(`Обработка PUT запроса для сотрудника с ID: ${id}`)
+    
+    const body = await request.json()
+    console.log('Тело запроса:', body)
+    
+    const { name, position } = body
+    
+    if (!name || !position) {
+      return NextResponse.json(
+        { error: 'Необходимо указать имя и должность' },
+        { status: 400 }
+      )
+    }
+    
+    // Загружаем текущих сотрудников
+    const employees = getEmployeesData()
+    const employeeIndex = employees.findIndex(emp => emp.id === id)
+    
+    if (employeeIndex === -1) {
+      console.log(`Сотрудник с ID ${id} не найден`)
+      return NextResponse.json(
+        { error: 'Сотрудник не найден' },
+        { status: 404 }
+      )
+    }
+    
+    // Обновляем данные сотрудника
+    const updatedEmployee = {
+      ...employees[employeeIndex],
+      name: name.trim(),
+      position: position.trim(),
+      updatedAt: new Date()
+    }
+    
+    // Заменяем сотрудника в массиве
+    employees[employeeIndex] = updatedEmployee
+    
+    // Сохраняем обновленные данные
+    if (saveEmployeesToFile(employees)) {
+      console.log(`Сотрудник с ID ${id} успешно обновлен`)
+      return NextResponse.json(updatedEmployee)
+    } else {
+      throw new Error('Не удалось сохранить данные')
+    }
+  } catch (error) {
+    console.error('Error updating employee:', error)
+    return NextResponse.json(
+      { error: 'Не удалось обновить сотрудника' },
+      { status: 500 }
+    )
+  }
+}
+
+// PATCH /api/employees/[id] - обновить сотрудника (частичное обновление)
 export async function PATCH(request: NextRequest, { params }: Params) {
   try {
     const { id } = params
+    console.log(`Обработка PATCH запроса для сотрудника с ID: ${id}`)
+    
     const body = await request.json()
+    console.log('Тело запроса:', body)
+    
     const { name, position } = body
     
     if (!name && !position) {
@@ -47,17 +144,38 @@ export async function PATCH(request: NextRequest, { params }: Params) {
       )
     }
     
-    const updatedEmployee = await prisma.employee.update({
-      where: { id },
-      data: {
-        ...(name && { name }),
-        ...(position && { position })
-      }
-    })
+    // Загружаем текущих сотрудников
+    const employees = getEmployeesData()
+    const employeeIndex = employees.findIndex(emp => emp.id === id)
     
-    return NextResponse.json(updatedEmployee)
+    if (employeeIndex === -1) {
+      console.log(`Сотрудник с ID ${id} не найден`)
+      return NextResponse.json(
+        { error: 'Сотрудник не найден' },
+        { status: 404 }
+      )
+    }
+    
+    // Обновляем данные сотрудника
+    const updatedEmployee = {
+      ...employees[employeeIndex],
+      ...(name && { name: name.trim() }),
+      ...(position && { position: position.trim() }),
+      updatedAt: new Date()
+    }
+    
+    // Заменяем сотрудника в массиве
+    employees[employeeIndex] = updatedEmployee
+    
+    // Сохраняем обновленные данные
+    if (saveEmployeesToFile(employees)) {
+      console.log(`Сотрудник с ID ${id} успешно обновлен через PATCH`)
+      return NextResponse.json(updatedEmployee)
+    } else {
+      throw new Error('Не удалось сохранить данные')
+    }
   } catch (error) {
-    console.error('Error updating employee:', error)
+    console.error('Error updating employee via PATCH:', error)
     return NextResponse.json(
       { error: 'Не удалось обновить сотрудника' },
       { status: 500 }
@@ -69,28 +187,34 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 export async function DELETE(request: NextRequest, { params }: Params) {
   try {
     const { id } = params
+    console.log(`Запрос на удаление сотрудника с ID: ${id}`)
     
-    // Проверим, существует ли сотрудник
-    const employee = await prisma.employee.findUnique({
-      where: { id }
-    })
+    // Загружаем текущих сотрудников
+    const employees = getEmployeesData()
+    const employeeIndex = employees.findIndex(emp => emp.id === id)
     
-    if (!employee) {
+    if (employeeIndex === -1) {
+      console.log(`Сотрудник с ID ${id} не найден`)
       return NextResponse.json(
         { error: 'Сотрудник не найден' },
         { status: 404 }
       )
     }
     
-    // Удаляем сотрудника (связанные записи будут удалены каскадно согласно схеме)
-    await prisma.employee.delete({
-      where: { id }
-    })
+    // Удаляем сотрудника из массива
+    const deletedEmployee = employees.splice(employeeIndex, 1)[0]
+    console.log(`Удален сотрудник: ${deletedEmployee.name}, id: ${deletedEmployee.id}`)
     
-    return NextResponse.json(
-      { message: 'Сотрудник успешно удален' },
-      { status: 200 }
-    )
+    // Сохраняем обновленные данные
+    if (saveEmployeesToFile(employees)) {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Сотрудник успешно удален',
+        id: id
+      })
+    } else {
+      throw new Error('Не удалось сохранить данные')
+    }
   } catch (error) {
     console.error('Error deleting employee:', error)
     return NextResponse.json(

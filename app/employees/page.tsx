@@ -42,6 +42,9 @@ export default function EmployeesPage() {
   // Обработчик добавления нового сотрудника
   const handleAddEmployee = async (data: { name: string; position: string }) => {
     try {
+      console.log('Отправляем запрос на создание сотрудника')
+      console.log('Данные для создания:', data)
+      
       const response = await fetch('/api/employees', {
         method: 'POST',
         headers: {
@@ -51,14 +54,19 @@ export default function EmployeesPage() {
       })
       
       if (!response.ok) {
-        throw new Error('Не удалось создать сотрудника')
+        const errorData = await response.json().catch(() => null)
+        console.error('Ошибка создания сотрудника:', response.status, errorData)
+        throw new Error(`Не удалось создать сотрудника: ${errorData?.error || response.statusText}`)
       }
       
       const newEmployee = await response.json()
+      console.log('Созданный сотрудник:', newEmployee)
+      
       setEmployees(prev => [...prev, newEmployee])
       setIsAddingEmployee(false)
     } catch (error) {
       console.error('Error adding employee:', error)
+      alert(`Ошибка при добавлении сотрудника: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`)
       throw error
     }
   }
@@ -68,8 +76,11 @@ export default function EmployeesPage() {
     if (!editingEmployee) return
     
     try {
+      console.log(`Отправляем запрос на обновление сотрудника ID: ${editingEmployee.id}`)
+      console.log('Данные для обновления:', data)
+      
       const response = await fetch(`/api/employees/${editingEmployee.id}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -77,10 +88,13 @@ export default function EmployeesPage() {
       })
       
       if (!response.ok) {
-        throw new Error('Не удалось обновить сотрудника')
+        const errorData = await response.json().catch(() => null)
+        console.error('Ошибка обновления сотрудника:', response.status, errorData)
+        throw new Error(`Не удалось обновить сотрудника: ${errorData?.error || response.statusText}`)
       }
       
       const updatedEmployee = await response.json()
+      console.log('Обновлённый сотрудник:', updatedEmployee)
       
       setEmployees(prev => 
         prev.map(employee => 
@@ -91,6 +105,7 @@ export default function EmployeesPage() {
       setEditingEmployee(null)
     } catch (error) {
       console.error('Error updating employee:', error)
+      alert(`Ошибка при обновлении сотрудника: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}`)
       throw error
     }
   }
