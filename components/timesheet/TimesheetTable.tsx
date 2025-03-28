@@ -1,9 +1,13 @@
-import React, { useState, useEffect } from 'react'
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react'
 import { formatTime, calculateDuration, formatDateISO } from '@/lib/utils'
 import { WorkDay, DAY_TYPE_LABELS, DayType } from '@/lib/types'
 import Select from '../ui/Select'
 import TimeInput from '../ui/TimeInput'
 import Button from '../ui/Button'
+import MobileTimesheetCard from './MobileTimesheetCard'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 interface TimesheetTableProps {
   workDays: WorkDay[]
@@ -11,6 +15,9 @@ interface TimesheetTableProps {
 }
 
 const TimesheetTable = ({ workDays, onSaveWorkDay }: TimesheetTableProps) => {
+  // Hooks для определения размера экрана
+  const isMobile = useMediaQuery('(max-width: 768px)');
+  
   // Проверяем, что workDays является массивом
   const validWorkDays = Array.isArray(workDays) ? workDays : []
   
@@ -336,163 +343,212 @@ const TimesheetTable = ({ workDays, onSaveWorkDay }: TimesheetTableProps) => {
         </Button>
       </div>
       
-      <div className="card p-0 overflow-hidden rounded-lg shadow-sm border border-gray-200">
-        <table className="w-full border-collapse text-xs">
-          <thead>
-            <tr className="bg-gray-50 text-gray-700">
-              <th scope="col" className="px-2 py-1.5 text-center font-medium w-10">№</th>
-              <th scope="col" className="px-2 py-1.5 text-left font-medium">СОТРУДНИК</th>
-              <th scope="col" className="px-2 py-1.5 text-left font-medium w-28">ТИП</th>
-              <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">НАЧАЛО<br/><span className="text-2xs font-normal text-gray-500">Рабочий день</span></th>
-              <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">КОНЕЦ<br/><span className="text-2xs font-normal text-gray-500">Рабочий день</span></th>
-              <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">ОБЕД<br/><span className="text-2xs font-normal text-gray-500">Начало</span></th>
-              <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">ОБЕД<br/><span className="text-2xs font-normal text-gray-500">Конец</span></th>
-              <th scope="col" className="px-1 py-1.5 text-center font-medium w-14">ЧАСЫ<br/><span className="text-2xs font-normal text-gray-500">Нетто/Всего</span></th>
-              <th scope="col" className="px-1 py-1.5 text-center font-medium w-14">ЗАД.</th>
-              <th scope="col" className="px-1 py-1.5 text-center font-medium w-14">ПОД.</th>
-              <th scope="col" className="px-2 py-1.5 text-left font-medium">КОММ.</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {validWorkDays.length > 0 ? validWorkDays.map((workDay, index) => {
-              if (!workDay || !workDay.employeeId || !editableWorkDays[workDay.employeeId]) {
-                console.warn('Пропускаем отображение записи:', workDay?.id || 'неизвестная запись')
-                return null;
-              }
-              
-              const employeeData = editableWorkDays[workDay.employeeId];
-              const isSaving = savingEmployees[workDay.employeeId] || false;
-              
-              return (
-                <tr key={workDay.employeeId} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                  <td className="px-2 py-1.5 text-center">
-                    <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-indigo-100 text-indigo-800 font-medium">
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <div className="font-medium text-gray-900 truncate max-w-[150px]">{workDay.employee?.name || 'Сотрудник'}</div>
-                    <div className="text-2xs text-gray-500 truncate max-w-[150px]">{workDay.employee?.position || 'Должность'}</div>
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <Select
-                      options={dayTypeOptions}
-                      value={employeeData.dayType}
-                      onChange={(e) => handleDayTypeChange(workDay.employeeId, e.target.value as DayType)}
-                      className="text-xs h-7 w-full text-xs"
-                      disabled={isSaving}
-                    />
-                  </td>
-                  <td className="px-1 py-1.5 text-center">
-                    <TimeInput
-                      value={employeeData.startTime}
-                      onChange={(e) => handleChange(workDay.employeeId, 'startTime', e.target.value)}
-                      className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
-                      disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
-                    />
-                  </td>
-                  <td className="px-1 py-1.5 text-center">
-                    <TimeInput
-                      value={employeeData.endTime}
-                      onChange={(e) => handleChange(workDay.employeeId, 'endTime', e.target.value)}
-                      className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
-                      disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
-                    />
-                  </td>
-                  <td className="px-1 py-1.5 text-center">
-                    <TimeInput
-                      value={employeeData.lunchStartTime}
-                      onChange={(e) => handleChange(workDay.employeeId, 'lunchStartTime', e.target.value)}
-                      className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
-                      disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
-                    />
-                  </td>
-                  <td className="px-1 py-1.5 text-center">
-                    <TimeInput
-                      value={employeeData.lunchEndTime}
-                      onChange={(e) => handleChange(workDay.employeeId, 'lunchEndTime', e.target.value)}
-                      className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
-                      disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
-                    />
-                  </td>
-                  <td className="px-1 py-1.5 text-center">
-                    <div className="flex flex-col">
-                      <span className="text-2xs text-gray-700 font-bold">{getTotalWorkTime(workDay, employeeData)}</span>
-                      <span className="text-2xs text-indigo-600 font-medium">{calculateNetDuration(workDay, employeeData)}</span>
+      {isMobile ? (
+        <div className="space-y-3">
+          {validWorkDays.length > 0 ? validWorkDays.map((workDay, index) => {
+            if (!workDay || !workDay.employeeId || !editableWorkDays[workDay.employeeId]) {
+              console.warn('Пропускаем отображение записи:', workDay?.id || 'неизвестная запись')
+              return null;
+            }
+            
+            const employeeData = editableWorkDays[workDay.employeeId];
+            const isSaving = savingEmployees[workDay.employeeId] || false;
+            
+            return (
+              <MobileTimesheetCard
+                key={workDay.employeeId}
+                workDay={workDay}
+                employeeData={employeeData}
+                index={index}
+                isSaving={isSaving}
+                netDuration={calculateNetDuration(workDay, employeeData)}
+                totalWorkTime={getTotalWorkTime(workDay, employeeData)}
+                onDayTypeChange={handleDayTypeChange}
+                onChange={handleChange}
+                onSave={handleSaveEmployee}
+              />
+            );
+          }) : (
+            <div className="card p-6 bg-white text-center text-gray-500">
+              <div className="flex flex-col items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>Ошибка загрузки данных. Пожалуйста, попробуйте обновить страницу.</div>
+              </div>
+            </div>
+          )}
+          
+          {validWorkDays.length > 0 && (
+            <div className="bg-gray-50 rounded p-3 text-xs">
+              <div className="font-medium mb-1">Всего сотрудников: {validWorkDays.length}</div>
+              <div className="text-gray-500 space-y-1">
+                <div>Рабочий день - регулярный рабочий день</div>
+                <div>Зад. - количество выполненных заданий</div>
+                <div>Под. - количество подключений</div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="card p-0 overflow-hidden rounded-lg shadow-sm border border-gray-200">
+          <table className="w-full border-collapse text-xs">
+            <thead>
+              <tr className="bg-gray-50 text-gray-700">
+                <th scope="col" className="px-2 py-1.5 text-center font-medium w-10">№</th>
+                <th scope="col" className="px-2 py-1.5 text-left font-medium">СОТРУДНИК</th>
+                <th scope="col" className="px-2 py-1.5 text-left font-medium w-28">ТИП</th>
+                <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">НАЧАЛО<br/><span className="text-2xs font-normal text-gray-500">Рабочий день</span></th>
+                <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">КОНЕЦ<br/><span className="text-2xs font-normal text-gray-500">Рабочий день</span></th>
+                <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">ОБЕД<br/><span className="text-2xs font-normal text-gray-500">Начало</span></th>
+                <th scope="col" className="px-1 py-1.5 text-center font-medium w-16">ОБЕД<br/><span className="text-2xs font-normal text-gray-500">Конец</span></th>
+                <th scope="col" className="px-1 py-1.5 text-center font-medium w-14">ЧАСЫ<br/><span className="text-2xs font-normal text-gray-500">Нетто/Всего</span></th>
+                <th scope="col" className="px-1 py-1.5 text-center font-medium w-14">ЗАД.</th>
+                <th scope="col" className="px-1 py-1.5 text-center font-medium w-14">ПОД.</th>
+                <th scope="col" className="px-2 py-1.5 text-left font-medium">КОММ.</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {validWorkDays.length > 0 ? validWorkDays.map((workDay, index) => {
+                if (!workDay || !workDay.employeeId || !editableWorkDays[workDay.employeeId]) {
+                  console.warn('Пропускаем отображение записи:', workDay?.id || 'неизвестная запись')
+                  return null;
+                }
+                
+                const employeeData = editableWorkDays[workDay.employeeId];
+                const isSaving = savingEmployees[workDay.employeeId] || false;
+                
+                return (
+                  <tr key={workDay.employeeId} className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
+                    <td className="px-2 py-1.5 text-center">
+                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-indigo-100 text-indigo-800 font-medium">
+                        {index + 1}
+                      </span>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <div className="font-medium text-gray-900 truncate max-w-[150px]">{workDay.employee?.name || 'Сотрудник'}</div>
+                      <div className="text-2xs text-gray-500 truncate max-w-[150px]">{workDay.employee?.position || 'Должность'}</div>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <Select
+                        options={dayTypeOptions}
+                        value={employeeData.dayType}
+                        onChange={(e) => handleDayTypeChange(workDay.employeeId, e.target.value as DayType)}
+                        className="text-xs h-7 w-full text-xs"
+                        disabled={isSaving}
+                      />
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      <TimeInput
+                        value={employeeData.startTime}
+                        onChange={(e) => handleChange(workDay.employeeId, 'startTime', e.target.value)}
+                        className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
+                        disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
+                      />
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      <TimeInput
+                        value={employeeData.endTime}
+                        onChange={(e) => handleChange(workDay.employeeId, 'endTime', e.target.value)}
+                        className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
+                        disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
+                      />
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      <TimeInput
+                        value={employeeData.lunchStartTime}
+                        onChange={(e) => handleChange(workDay.employeeId, 'lunchStartTime', e.target.value)}
+                        className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
+                        disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
+                      />
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      <TimeInput
+                        value={employeeData.lunchEndTime}
+                        onChange={(e) => handleChange(workDay.employeeId, 'lunchEndTime', e.target.value)}
+                        className={`h-7 text-xs w-full text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
+                        disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
+                      />
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      <div className="flex flex-col">
+                        <span className="text-2xs text-gray-700 font-bold">{getTotalWorkTime(workDay, employeeData)}</span>
+                        <span className="text-2xs text-indigo-600 font-medium">{calculateNetDuration(workDay, employeeData)}</span>
+                      </div>
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      <input
+                        type="number"
+                        min="0"
+                        value={employeeData.tasksCompleted}
+                        onChange={(e) => handleChange(workDay.employeeId, 'tasksCompleted', e.target.value)}
+                        className={`w-full h-7 text-xs rounded border-gray-300 text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
+                        disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
+                      />
+                    </td>
+                    <td className="px-1 py-1.5 text-center">
+                      <input
+                        type="number"
+                        min="0"
+                        value={employeeData.connectionsEstablished}
+                        onChange={(e) => handleChange(workDay.employeeId, 'connectionsEstablished', e.target.value)}
+                        className={`w-full h-7 text-xs rounded border-gray-300 text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
+                        disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="text"
+                        placeholder="Комментарий..."
+                        value={employeeData.comment}
+                        onChange={(e) => handleChange(workDay.employeeId, 'comment', e.target.value)}
+                        className="w-full h-7 text-xs rounded border-gray-300"
+                        disabled={isSaving}
+                      />
+                    </td>
+                    <td className="px-2 py-1.5 text-center w-20">
+                      <Button 
+                        onClick={() => handleSaveEmployee(workDay)}
+                        disabled={isSaving}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs"
+                      >
+                        {isSaving ? '...' : 'Сохранить'}
+                      </Button>
+                    </td>
+                  </tr>
+                )
+              }) : (
+                <tr>
+                  <td colSpan={12} className="p-6 text-center text-gray-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>Ошибка загрузки данных. Пожалуйста, попробуйте обновить страницу.</div>
                     </div>
                   </td>
-                  <td className="px-1 py-1.5 text-center">
-                    <input
-                      type="number"
-                      min="0"
-                      value={employeeData.tasksCompleted}
-                      onChange={(e) => handleChange(workDay.employeeId, 'tasksCompleted', e.target.value)}
-                      className={`w-full h-7 text-xs rounded border-gray-300 text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
-                      disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
-                    />
-                  </td>
-                  <td className="px-1 py-1.5 text-center">
-                    <input
-                      type="number"
-                      min="0"
-                      value={employeeData.connectionsEstablished}
-                      onChange={(e) => handleChange(workDay.employeeId, 'connectionsEstablished', e.target.value)}
-                      className={`w-full h-7 text-xs rounded border-gray-300 text-center ${employeeData.dayType !== 'WORK_DAY' ? 'opacity-50' : ''}`}
-                      disabled={employeeData.dayType !== 'WORK_DAY' || isSaving}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5">
-                    <input
-                      type="text"
-                      placeholder="Комментарий..."
-                      value={employeeData.comment}
-                      onChange={(e) => handleChange(workDay.employeeId, 'comment', e.target.value)}
-                      className="w-full h-7 text-xs rounded border-gray-300"
-                      disabled={isSaving}
-                    />
-                  </td>
-                  <td className="px-2 py-1.5 text-center w-20">
-                    <Button 
-                      onClick={() => handleSaveEmployee(workDay)}
-                      disabled={isSaving}
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                    >
-                      {isSaving ? '...' : 'Сохранить'}
-                    </Button>
-                  </td>
                 </tr>
-              )
-            }) : (
-              <tr>
-                <td colSpan={12} className="p-6 text-center text-gray-500">
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <div>Ошибка загрузки данных. Пожалуйста, попробуйте обновить страницу.</div>
+              )}
+            </tbody>
+            <tfoot>
+              <tr className="bg-gray-50 text-gray-700 border-t border-gray-200">
+                <td colSpan={3} className="px-2 py-2 text-xs font-medium">
+                  Всего сотрудников: {validWorkDays.length}
+                </td>
+                <td colSpan={9} className="px-2 py-2 text-xs text-right">
+                  <div className="text-xs text-gray-500">
+                    <span className="mr-3">Рабочий день - регулярный рабочий день</span>
+                    <span className="mr-3">Зад. - количество выполненных заданий</span>
+                    <span>Под. - количество подключений</span>
                   </div>
                 </td>
               </tr>
-            )}
-          </tbody>
-          <tfoot>
-            <tr className="bg-gray-50 text-gray-700 border-t border-gray-200">
-              <td colSpan={3} className="px-2 py-2 text-xs font-medium">
-                Всего сотрудников: {validWorkDays.length}
-              </td>
-              <td colSpan={9} className="px-2 py-2 text-xs text-right">
-                <div className="text-xs text-gray-500">
-                  <span className="mr-3">Рабочий день - регулярный рабочий день</span>
-                  <span className="mr-3">Зад. - количество выполненных заданий</span>
-                  <span>Под. - количество подключений</span>
-                </div>
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+            </tfoot>
+          </table>
+        </div>
+      )}
     </div>
   )
 }

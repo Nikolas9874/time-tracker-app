@@ -1,37 +1,46 @@
-import type { Metadata } from "next";
-import { Geist } from "next/font/google";
-import "./globals.css";
-import Navbar from "@/components/ui/Navbar";
-import { AuthProvider } from "@/lib/AuthContext";
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import Navbar from "@/components/ui/Navbar"
+import { AuthProvider } from "@/lib/AuthContext"
+import { ThemeProvider } from "@/lib/ThemeContext"
 
-const geist = Geist({
-  subsets: ["latin"],
-  display: "swap",
-});
+const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: "Учет рабочего времени",
-  description: "Приложение для учета рабочего времени сотрудников",
-};
+  title: 'Time Tracker',
+  description: 'Система учета рабочего времени',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="ru">
-      <body className={`${geist.className} bg-white text-gray-900`}>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+      </head>
+      <body className={inter.className}>
         <AuthProvider>
-          <Navbar />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 bg-white">
-            {children}
-          </main>
-          <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-10 text-center text-gray-500 text-sm border-t border-gray-200 bg-white">
-            <p>© {new Date().getFullYear()} Система учета рабочего времени</p>
-          </footer>
+          <ThemeProvider>
+            <div className="flex flex-col min-h-screen">
+              <Navbar />
+              <main className="flex-grow">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
+                  {children}
+                </div>
+              </main>
+              <footer className="bg-white border-t border-gray-200 py-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-xs">
+                  <p>© {new Date().getFullYear()} Система учета рабочего времени</p>
+                </div>
+              </footer>
+            </div>
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>
-  );
+  )
 }

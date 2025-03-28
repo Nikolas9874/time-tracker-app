@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/**
+ * Переменные для светлой темы (по умолчанию)
+ */
 :root {
   --primary-color: #4f46e5;
   --primary-hover: #4338ca;
@@ -15,6 +18,54 @@
   --warning-color: #f59e0b;
   --danger-color: #ef4444;
   --info-color: #3b82f6;
+  --table-header-bg: #f3f4f6;
+  --table-row-alt-bg: #f9fafb;
+  --table-row-hover-bg: #f3f4f6;
+  --input-bg: #ffffff;
+  --input-border: #e5e7eb;
+  --btn-outline-bg: #ffffff;
+  --btn-outline-border: #e5e7eb;
+  --day-type-work-bg: #ffffff;
+  --day-type-dayoff-bg: #f3f4f6;
+  --day-type-vacation-bg: #dbeafe;
+  --day-type-sick-bg: #fef3c7;
+  --day-type-absence-bg: #fee2e2;
+  --day-type-unpaid-bg: #f3e8ff;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --shadow-color-light: rgba(0, 0, 0, 0.05);
+}
+
+/**
+ * Переменные для темной темы
+ */
+.dark-theme {
+  --primary-color: #6366f1;
+  --primary-hover: #818cf8;
+  --background-color: #111827;
+  --foreground-color: #e5e7eb;
+  --muted-color: #9ca3af;
+  --border-color: #374151;
+  --card-background: #1f2937;
+  --card-border: #374151;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --info-color: #3b82f6;
+  --table-header-bg: #1f2937;
+  --table-row-alt-bg: #1f2937;
+  --table-row-hover-bg: #2d3748;
+  --input-bg: #1f2937;
+  --input-border: #374151;
+  --btn-outline-bg: #1f2937;
+  --btn-outline-border: #374151;
+  --day-type-work-bg: #1f2937;
+  --day-type-dayoff-bg: #2d3748;
+  --day-type-vacation-bg: #172554;
+  --day-type-sick-bg: #422006;
+  --day-type-absence-bg: #450a0a;
+  --day-type-unpaid-bg: #3b0764;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --shadow-color-light: rgba(0, 0, 0, 0.3);
 }
 
 @theme inline {
@@ -24,73 +75,68 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #f9fafb;
-    --foreground: #1f2937;
-  }
-}
-
+/* Стили для основных элементов */
 body {
   background-color: var(--background-color);
   color: var(--foreground-color);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .table-header {
-  background-color: #f3f4f6;
+  background-color: var(--table-header-bg);
   font-weight: 600;
 }
 
 .table-row-alt:nth-child(even) {
-  background-color: #f9fafb;
+  background-color: var(--table-row-alt-bg);
 }
 
 .table-row-hover:hover {
-  background-color: #f3f4f6;
+  background-color: var(--table-row-hover-bg);
   transition: background-color 0.2s;
 }
 
 /* Цвета для разных типов дней */
 .day-type-work {
-  background-color: #ffffff;
+  background-color: var(--day-type-work-bg);
 }
 
 .day-type-dayoff {
-  background-color: #f3f4f6;
+  background-color: var(--day-type-dayoff-bg);
 }
 
 .day-type-vacation {
-  background-color: #dbeafe;
+  background-color: var(--day-type-vacation-bg);
 }
 
 .day-type-sick {
-  background-color: #fef3c7;
+  background-color: var(--day-type-sick-bg);
 }
 
 .day-type-absence {
-  background-color: #fee2e2;
+  background-color: var(--day-type-absence-bg);
 }
 
 .day-type-unpaid {
-  background-color: #f3e8ff;
+  background-color: var(--day-type-unpaid-bg);
 }
 
 /* Улучшенная читаемость для форм */
 input, select, textarea {
-  background-color: #ffffff;
+  background-color: var(--input-bg);
   border: 1px solid var(--border-color);
   border-radius: 0.5rem;
   padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
   line-height: 1.25rem;
   color: var(--foreground-color);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 2px var(--shadow-color-light);
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease;
 }
 
 input:hover, select:hover, textarea:hover {
-  border-color: #d1d5db;
+  border-color: var(--muted-color);
 }
 
 input:focus, select:focus, textarea:focus {
@@ -108,7 +154,7 @@ input:focus, select:focus, textarea:focus {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 2px var(--shadow-color-light);
 }
 
 .btn-primary {
@@ -119,20 +165,20 @@ input:focus, select:focus, textarea:focus {
 .btn-primary:hover {
   background-color: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px var(--shadow-color);
 }
 
 .btn-outline {
-  background-color: white;
-  border: 1px solid var(--border-color);
+  background-color: var(--btn-outline-bg);
+  border: 1px solid var(--btn-outline-border);
   color: var(--foreground-color);
 }
 
 .btn-outline:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
+  background-color: var(--table-row-hover-bg);
+  border-color: var(--muted-color);
   transform: translateY(-1px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px var(--shadow-color-light);
 }
 
 /* Улучшенный контраст для таблиц */
@@ -143,8 +189,9 @@ table {
   border: 1px solid var(--card-border);
   border-radius: 0.75rem;
   overflow: hidden;
-  background-color: #ffffff;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background-color: var(--card-background);
+  box-shadow: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color-light);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 th {
@@ -155,9 +202,10 @@ th {
   line-height: 1rem;
   text-transform: uppercase;
   color: var(--muted-color);
-  background-color: #f3f4f6;
+  background-color: var(--table-header-bg);
   border-bottom: 1px solid var(--card-border);
   letter-spacing: 0.05em;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 td {
@@ -165,7 +213,8 @@ td {
   vertical-align: middle;
   border-bottom: 1px solid var(--card-border);
   color: var(--foreground-color);
-  background-color: #ffffff;
+  background-color: var(--card-background);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
 tr:last-child td {
@@ -182,6 +231,7 @@ tr:last-child td {
   font-weight: 500;
   border-radius: 9999px;
   white-space: nowrap;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .badge-primary {
@@ -189,9 +239,19 @@ tr:last-child td {
   color: #4f46e5;
 }
 
+.dark-theme .badge-primary {
+  background-color: #1e1b4b;
+  color: #818cf8;
+}
+
 .badge-success {
   background-color: #d1fae5;
   color: #047857;
+}
+
+.dark-theme .badge-success {
+  background-color: #064e3b;
+  color: #34d399;
 }
 
 .badge-warning {
@@ -199,9 +259,19 @@ tr:last-child td {
   color: #b45309;
 }
 
+.dark-theme .badge-warning {
+  background-color: #422006;
+  color: #fbbf24;
+}
+
 .badge-danger {
   background-color: #fee2e2;
   color: #b91c1c;
+}
+
+.dark-theme .badge-danger {
+  background-color: #450a0a;
+  color: #f87171;
 }
 
 .badge-gray {
@@ -209,19 +279,26 @@ tr:last-child td {
   color: #4b5563;
 }
 
+.dark-theme .badge-gray {
+  background-color: #2d3748;
+  color: #a0aec0;
+}
+
 /* Стилизация для карточек */
 .card {
-  background-color: white;
+  background-color: var(--card-background);
   border-radius: 0.75rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px var(--shadow-color), 0 2px 4px -1px var(--shadow-color-light);
   border: 1px solid var(--card-border);
   overflow: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card-header {
   padding: 1.25rem;
   border-bottom: 1px solid var(--card-border);
-  background-color: #f9fafb;
+  background-color: var(--table-header-bg);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .card-body {
@@ -231,5 +308,151 @@ tr:last-child td {
 .card-footer {
   padding: 1.25rem;
   border-top: 1px solid var(--card-border);
-  background-color: #f9fafb;
+  background-color: var(--table-header-bg);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Переключатель темы */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 9999px;
+  padding: 0.25rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--table-row-hover-bg);
+}
+
+.theme-toggle svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--foreground-color);
+  transition: color 0.3s ease;
+}
+
+/* Переопределение некоторых цветов Tailwind */
+.dark-theme .bg-white {
+  background-color: var(--card-background) !important;
+}
+
+.dark-theme .text-gray-900 {
+  color: var(--foreground-color) !important;
+}
+
+.dark-theme .text-gray-500 {
+  color: var(--muted-color) !important;
+}
+
+.dark-theme .text-gray-700 {
+  color: var(--foreground-color) !important;
+}
+
+.dark-theme .border-gray-200 {
+  border-color: var(--border-color) !important;
+}
+
+/* Tailwind переменные темы */
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+
+  --primary: 221.2 83.2% 53.3%;
+  --primary-foreground: 210 40% 98%;
+
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 221.2 83.2% 53.3%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 222.2 84% 4.9%;
+  --foreground: 210 40% 98%;
+
+  --card: 222.2 84% 4.9%;
+  --card-foreground: 210 40% 98%;
+
+  --popover: 222.2 84% 4.9%;
+  --popover-foreground: 210 40% 98%;
+
+  --primary: 217.2 91.2% 59.8%;
+  --primary-foreground: 222.2 47.4% 11.2%;
+
+  --secondary: 217.2 32.6% 17.5%;
+  --secondary-foreground: 210 40% 98%;
+
+  --muted: 217.2 32.6% 17.5%;
+  --muted-foreground: 215 20.2% 65.1%;
+
+  --accent: 217.2 32.6% 17.5%;
+  --accent-foreground: 210 40% 98%;
+
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 210 40% 98%;
+
+  --border: 217.2 32.6% 17.5%;
+  --input: 217.2 32.6% 17.5%;
+  --ring: 224.3 76.5% 48%;
+}
+
+@layer base {
+  * {
+    @apply border-[#e5e7eb] dark:border-[#374151];
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .text-2xs {
+    font-size: 0.65rem;
+    line-height: 1rem;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

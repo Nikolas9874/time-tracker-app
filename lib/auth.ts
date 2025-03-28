@@ -113,6 +113,36 @@ export function getCurrentUser(token: string): User | null {
   return userWithoutPassword as User;
 }
 
+// Проверка авторизации в API запросах
+export async function verifyAuth(request: Request): Promise<{ success: boolean; user?: User }> {
+  try {
+    // Извлекаем токен из заголовка Authorization
+    const authHeader = request.headers.get('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return { success: false };
+    }
+    
+    const token = authHeader.split(' ')[1];
+    
+    if (!token) {
+      return { success: false };
+    }
+    
+    // Проверяем токен и получаем пользователя
+    const user = getCurrentUser(token);
+    
+    if (!user) {
+      return { success: false };
+    }
+    
+    return { success: true, user };
+  } catch (error) {
+    console.error('Auth verification error:', error);
+    return { success: false };
+  }
+}
+
 // Завершение сессии
 export function endSession(token: string): boolean {
   const sessionIndex = sessions.findIndex(s => s.token === token);
