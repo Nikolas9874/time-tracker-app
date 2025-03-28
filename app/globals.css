@@ -1,26 +1,235 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --primary-color: #4f46e5;
+  --primary-hover: #4338ca;
+  --background-color: #f9fafb;
+  --foreground-color: #1f2937;
+  --muted-color: #6b7280;
+  --border-color: #e5e7eb;
+  --card-background: #ffffff;
+  --card-border: #e5e7eb;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+  --info-color: #3b82f6;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--background-color);
+  --color-foreground: var(--foreground-color);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #f9fafb;
+    --foreground: #1f2937;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--background-color);
+  color: var(--foreground-color);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.table-header {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.table-row-alt:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.table-row-hover:hover {
+  background-color: #f3f4f6;
+  transition: background-color 0.2s;
+}
+
+/* Цвета для разных типов дней */
+.day-type-work {
+  background-color: #ffffff;
+}
+
+.day-type-dayoff {
+  background-color: #f3f4f6;
+}
+
+.day-type-vacation {
+  background-color: #dbeafe;
+}
+
+.day-type-sick {
+  background-color: #fef3c7;
+}
+
+.day-type-absence {
+  background-color: #fee2e2;
+}
+
+.day-type-unpaid {
+  background-color: #f3e8ff;
+}
+
+/* Улучшенная читаемость для форм */
+input, select, textarea {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: var(--foreground-color);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:hover, select:hover, textarea:hover {
+  border-color: #d1d5db;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Улучшенная читаемость для кнопок */
+.btn {
+  border-radius: 0.5rem;
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline {
+  background-color: white;
+  border: 1px solid var(--border-color);
+  color: var(--foreground-color);
+}
+
+.btn-outline:hover {
+  background-color: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Улучшенный контраст для таблиц */
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background-color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+th {
+  text-align: left;
+  padding: 1rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  text-transform: uppercase;
+  color: var(--muted-color);
+  background-color: #f3f4f6;
+  border-bottom: 1px solid var(--card-border);
+  letter-spacing: 0.05em;
+}
+
+td {
+  padding: 1rem;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--card-border);
+  color: var(--foreground-color);
+  background-color: #ffffff;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+/* Стилизация для бейджей */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+
+.badge-primary {
+  background-color: #e0e7ff;
+  color: #4f46e5;
+}
+
+.badge-success {
+  background-color: #d1fae5;
+  color: #047857;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #b45309;
+}
+
+.badge-danger {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.badge-gray {
+  background-color: #f3f4f6;
+  color: #4b5563;
+}
+
+/* Стилизация для карточек */
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--card-border);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid var(--card-border);
+  background-color: #f9fafb;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.card-footer {
+  padding: 1.25rem;
+  border-top: 1px solid var(--card-border);
+  background-color: #f9fafb;
 }

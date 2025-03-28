@@ -1,0 +1,257 @@
+[
+  {
+    "id": "wd-emp-1-2025-03-28",
+    "employeeId": "emp-1",
+    "date": "2025-03-28",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:42:40.147Z",
+    "updatedAt": "2025-03-28T08:42:40.147Z",
+    "employee": {
+      "id": "emp-1",
+      "name": "Иванов Иван",
+      "position": "Разработчик",
+      "createdAt": "2023-01-01T00:00:00.000Z",
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "timeEntry": {
+      "id": "te-emp-1-2025-03-28",
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "lunchStartTime": "13:00",
+      "lunchEndTime": "14:00",
+      "workDayId": "wd-emp-1-2025-03-28",
+      "createdAt": "2025-03-28T08:42:40.147Z",
+      "updatedAt": "2025-03-28T08:42:40.147Z"
+    },
+    "workStats": {
+      "tasksCompleted": 5,
+      "connectionsEstablished": 3
+    }
+  },
+  {
+    "id": "wd-emp-2-2025-03-28",
+    "employeeId": "emp-2",
+    "date": "2025-03-28",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:42:40.147Z",
+    "updatedAt": "2025-03-28T08:42:40.147Z",
+    "employee": {
+      "id": "emp-2",
+      "name": "Петрова Анна",
+      "position": "Дизайнер",
+      "createdAt": "2023-01-02T00:00:00.000Z",
+      "updatedAt": "2023-01-02T00:00:00.000Z"
+    },
+    "timeEntry": {
+      "id": "te-emp-2-2025-03-28",
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "lunchStartTime": "13:00",
+      "lunchEndTime": "14:00",
+      "workDayId": "wd-emp-2-2025-03-28",
+      "createdAt": "2025-03-28T08:42:40.147Z",
+      "updatedAt": "2025-03-28T08:42:40.147Z"
+    },
+    "workStats": {
+      "tasksCompleted": 5,
+      "connectionsEstablished": 3
+    }
+  },
+  {
+    "id": "wd-emp-3-2025-03-28",
+    "employeeId": "emp-3",
+    "date": "2025-03-28",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:42:40.147Z",
+    "updatedAt": "2025-03-28T08:42:40.147Z",
+    "employee": {
+      "id": "emp-3",
+      "name": "Сидоров Алексей",
+      "position": "Менеджер проекта",
+      "createdAt": "2023-01-03T00:00:00.000Z",
+      "updatedAt": "2023-01-03T00:00:00.000Z"
+    },
+    "timeEntry": {
+      "id": "te-emp-3-2025-03-28",
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "lunchStartTime": "13:00",
+      "lunchEndTime": "14:00",
+      "workDayId": "wd-emp-3-2025-03-28",
+      "createdAt": "2025-03-28T08:42:40.147Z",
+      "updatedAt": "2025-03-28T08:42:40.147Z"
+    },
+    "workStats": {
+      "tasksCompleted": 5,
+      "connectionsEstablished": 3
+    }
+  },
+  {
+    "id": "wd-emp-4-2025-03-28",
+    "employeeId": "emp-4",
+    "date": "2025-03-28",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:42:40.147Z",
+    "updatedAt": "2025-03-28T08:42:40.147Z",
+    "employee": {
+      "id": "emp-4",
+      "name": "Смирнова Екатерина",
+      "position": "Тестировщик",
+      "createdAt": "2023-01-04T00:00:00.000Z",
+      "updatedAt": "2023-01-04T00:00:00.000Z"
+    },
+    "timeEntry": {
+      "id": "te-emp-4-2025-03-28",
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "lunchStartTime": "13:00",
+      "lunchEndTime": "14:00",
+      "workDayId": "wd-emp-4-2025-03-28",
+      "createdAt": "2025-03-28T08:42:40.147Z",
+      "updatedAt": "2025-03-28T08:42:40.147Z"
+    },
+    "workStats": {
+      "tasksCompleted": 5,
+      "connectionsEstablished": 3
+    }
+  },
+  {
+    "id": "wd-emp-5-2025-03-28",
+    "employeeId": "emp-5",
+    "date": "2025-03-28",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:42:40.147Z",
+    "updatedAt": "2025-03-28T08:42:40.147Z",
+    "employee": {
+      "id": "emp-5",
+      "name": "Козлов Дмитрий",
+      "position": "Системный администратор",
+      "createdAt": "2023-01-05T00:00:00.000Z",
+      "updatedAt": "2023-01-05T00:00:00.000Z"
+    },
+    "timeEntry": {
+      "id": "te-emp-5-2025-03-28",
+      "startTime": "08:00",
+      "endTime": "18:00",
+      "lunchStartTime": "13:00",
+      "lunchEndTime": "14:00",
+      "workDayId": "wd-emp-5-2025-03-28",
+      "createdAt": "2025-03-28T08:42:40.147Z",
+      "updatedAt": "2025-03-28T08:42:40.147Z"
+    },
+    "workStats": {
+      "tasksCompleted": 5,
+      "connectionsEstablished": 3
+    }
+  },
+  {
+    "id": "wd-emp-1-2025-03-29",
+    "employeeId": "emp-1",
+    "date": "2025-03-29",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:43:21.245Z",
+    "updatedAt": "2025-03-28T08:43:21.245Z",
+    "timeEntry": null,
+    "employee": {
+      "id": "emp-1",
+      "name": "Иванов Иван",
+      "position": "Разработчик",
+      "createdAt": "2023-01-01T00:00:00.000Z",
+      "updatedAt": "2023-01-01T00:00:00.000Z"
+    },
+    "workStats": {
+      "tasksCompleted": 0,
+      "connectionsEstablished": 0
+    }
+  },
+  {
+    "id": "wd-emp-2-2025-03-29",
+    "employeeId": "emp-2",
+    "date": "2025-03-29",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:43:21.263Z",
+    "updatedAt": "2025-03-28T08:43:21.263Z",
+    "timeEntry": null,
+    "employee": {
+      "id": "emp-2",
+      "name": "Петрова Анна",
+      "position": "Дизайнер",
+      "createdAt": "2023-01-02T00:00:00.000Z",
+      "updatedAt": "2023-01-02T00:00:00.000Z"
+    },
+    "workStats": {
+      "tasksCompleted": 0,
+      "connectionsEstablished": 0
+    }
+  },
+  {
+    "id": "wd-emp-3-2025-03-29",
+    "employeeId": "emp-3",
+    "date": "2025-03-29",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:43:21.284Z",
+    "updatedAt": "2025-03-28T08:43:21.284Z",
+    "timeEntry": null,
+    "employee": {
+      "id": "emp-3",
+      "name": "Сидоров Алексей",
+      "position": "Менеджер проекта",
+      "createdAt": "2023-01-03T00:00:00.000Z",
+      "updatedAt": "2023-01-03T00:00:00.000Z"
+    },
+    "workStats": {
+      "tasksCompleted": 0,
+      "connectionsEstablished": 0
+    }
+  },
+  {
+    "id": "wd-emp-4-2025-03-29",
+    "employeeId": "emp-4",
+    "date": "2025-03-29",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:43:21.302Z",
+    "updatedAt": "2025-03-28T08:43:21.302Z",
+    "timeEntry": null,
+    "employee": {
+      "id": "emp-4",
+      "name": "Смирнова Екатерина",
+      "position": "Тестировщик",
+      "createdAt": "2023-01-04T00:00:00.000Z",
+      "updatedAt": "2023-01-04T00:00:00.000Z"
+    },
+    "workStats": {
+      "tasksCompleted": 0,
+      "connectionsEstablished": 0
+    }
+  },
+  {
+    "id": "wd-emp-5-2025-03-29",
+    "employeeId": "emp-5",
+    "date": "2025-03-29",
+    "dayType": "WORK_DAY",
+    "comment": null,
+    "createdAt": "2025-03-28T08:43:21.319Z",
+    "updatedAt": "2025-03-28T08:43:21.319Z",
+    "timeEntry": null,
+    "employee": {
+      "id": "emp-5",
+      "name": "Козлов Дмитрий",
+      "position": "Системный администратор",
+      "createdAt": "2023-01-05T00:00:00.000Z",
+      "updatedAt": "2023-01-05T00:00:00.000Z"
+    },
+    "workStats": {
+      "tasksCompleted": 0,
+      "connectionsEstablished": 0
+    }
+  }
+]
