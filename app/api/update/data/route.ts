@@ -1,19 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
 import { Employee, WorkDay } from '@/lib/types';
 import { mockEmployees, mockWorkDays } from '@/lib/mockData';
-import { v4 as uuidv4 } from 'uuid';
 
 // Глобальные переменные для хранения данных
-let employees: Employee[] = [...mockEmployees];
-let workdays: WorkDay[] = [...mockWorkDays];
+const employees: Employee[] = [...mockEmployees];
+const workdays: WorkDay[] = [...mockWorkDays];
 
 /**
  * Обработчик POST-запроса для обновления данных из внешнего источника
  * 
- * @param request Объект запроса
  * @returns Ответ с результатом операции
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // В реальном приложении здесь был бы запрос к внешнему API
     // Для демонстрации мы генерируем новые тестовые данные
