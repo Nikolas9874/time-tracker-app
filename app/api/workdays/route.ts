@@ -1,305 +1,431 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { mockEmployees } from '@/lib/mockData'
-import { WorkDay, DayType, Employee } from '@/lib/types'
+import { db } from '@/lib/db'
 
-// Объявляем массив для хранения данных в памяти
-let workDaysData: WorkDay[] = []
-
-// Функция для сохранения данных в localStorage на клиентской стороне
-// (Будет вызываться при изменении данных)
-const saveWorkDaysData = () => {
-  // В серверном компоненте localStorage недоступен
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem('workdays_data', JSON.stringify(workDaysData));
-      console.log(`Сохранено ${workDaysData.length} записей в localStorage`);
-    } catch (e) {
-      console.error('Ошибка сохранения в localStorage:', e);
-    }
-  }
+interface WorkDayWithJson {
+  id: string
+  employeeId: string
+  employee: any
+  date: Date
+  dayType: string
+  timeEntry: string | null
+  tasks: string | null
+  connections: string | null
+  comment: string | null
+  createdAt: Date
+  updatedAt: Date
 }
 
-// Инициализация базы данных - попытка восстановить из localStorage
-// или создание тестовых данных, если ничего не найдено
-const initWorkDaysData = () => {
-  // Сначала пытаемся загрузить данные из файловой системы
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const dataFilePath = path.join(process.cwd(), 'workdays_data.json');
-    
-    if (fs.existsSync(dataFilePath)) {
-      try {
-        const data = JSON.parse(fs.readFileSync(dataFilePath, 'utf8'));
-        if (Array.isArray(data) && data.length > 0) {
-          // Преобразуем даты обратно в объекты Date, где необходимо
-          workDaysData = data.map((wd: any) => ({
-            ...wd,
-            createdAt: new Date(wd.createdAt),
-            updatedAt: new Date(wd.updatedAt),
-            timeEntry: wd.timeEntry ? {
-              ...wd.timeEntry,
-              createdAt: new Date(wd.timeEntry.createdAt),
-              updatedAt: new Date(wd.timeEntry.updatedAt)
-            } : null
-          }));
-          console.log(`Восстановлено ${workDaysData.length} записей из файла`);
-          return;
-        }
-      } catch (e) {
-        console.error('Ошибка чтения из файла:', e);
-      }
-    }
-  } catch (e) {
-    console.error('Ошибка при попытке доступа к файловой системе:', e);
-  }
-  
-  console.log('===== СОЗДАНИЕ ТЕСТОВЫХ ДАННЫХ =====');
-
-  // Создаем тестовые данные на сегодня
-  const todayDateStr = new Date().toISOString().split('T')[0];
-  console.log(`Создаём данные на дату: ${todayDateStr}`);
-
-  // Создаем записи для всех сотрудников
-  mockEmployees.forEach((employee: Employee) => {
-    const workDayId = `wd-${employee.id}-${todayDateStr}`;
-    const timeEntryId = `te-${employee.id}-${todayDateStr}`;
-
-    // Создаём тестовую запись
-    const workDay: WorkDay = {
-      id: workDayId,
-      employeeId: employee.id,
-      // Храним только дату в виде строки YYYY-MM-DD без времени
-      date: todayDateStr,
-      dayType: 'WORK_DAY',
-      comment: null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      employee,
-      timeEntry: {
-        id: timeEntryId,
-        startTime: '08:00',
-        endTime: '18:00',
-        lunchStartTime: '13:00',
-        lunchEndTime: '14:00',
-        workDayId,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      },
-      workStats: {
-        tasksCompleted: 5,
-        connectionsEstablished: 3
-      }
-    };
-
-    workDaysData.push(workDay);
-  });
-
-  console.log(`База содержит ${workDaysData.length} записей`);
-  
-  // Сохраняем созданные данные в файл
-  saveWorkDaysToFile();
-}
-
-// Функция для сохранения данных в файл
-const saveWorkDaysToFile = () => {
-  try {
-    const fs = require('fs');
-    const path = require('path');
-    const dataFilePath = path.join(process.cwd(), 'workdays_data.json');
-    
-    fs.writeFileSync(dataFilePath, JSON.stringify(workDaysData, null, 2), 'utf8');
-    console.log(`Сохранено ${workDaysData.length} записей в файл`);
-  } catch (e) {
-    console.error('Ошибка сохранения в файл:', e);
-  }
-}
-
-// Инициализируем базу данных при запуске
-initWorkDaysData();
-
-// GET /api/workdays?date=YYYY-MM-DD - получить рабочие дни на указанную дату
+// GET /api/workdays - получение списка рабочих дней с фильтрацией
 export async function GET(request: NextRequest) {
-  // Получаем дату из запроса
-  const { searchParams } = new URL(request.url)
-  const dateParam = searchParams.get('date')
-  
-  if (!dateParam) {
-    return NextResponse.json(
-      { error: 'Date parameter is required' },
-      { status: 400 }
-    )
-  }
-  
-  console.log(`Запрошены рабочие дни на дату: ${dateParam}`);
-  
-  // Фильтруем рабочие дни по дате (строгое сравнение строк)
-  const filteredWorkDays = workDaysData.filter(workDay => {
-    // Сравниваем строки напрямую - обе даты хранятся в формате YYYY-MM-DD
-    const match = workDay.date === dateParam;
-    if (match) {
-      console.log(`Найдена запись: id=${workDay.id}`);
-    }
-    return match;
-  });
-  
-  console.log(`Найдено ${filteredWorkDays.length} записей на дату ${dateParam}`);
-  
-  // Дополняем информацией о сотруднике, если её ещё нет
-  const workDaysWithEmployees = filteredWorkDays.map(workDay => {
-    if (workDay.employee) return workDay;
-    
-    const employee = mockEmployees.find((emp: Employee) => emp.id === workDay.employeeId);
-    
-    return {
-      ...workDay,
-      employee: employee || null
-    };
-  });
-  
-  return NextResponse.json(workDaysWithEmployees);
-}
-
-// POST /api/workdays - создать или обновить рабочий день для сотрудника
-export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
-    
-    console.log('Получены данные для сохранения:', data);
-    
-    // Проверяем обязательные поля
-    if (!data.employeeId || !data.date || !data.dayType) {
+    const searchParams = request.nextUrl.searchParams
+
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+    const employeeId = searchParams.get('employeeId')
+    const date = searchParams.get('date') // Добавляем поддержку просто даты для табеля
+
+    // Поддержка как для reports (с startDate и endDate), так и для timesheet (с date)
+    if ((!startDate || !endDate) && !date) {
       return NextResponse.json(
-        { error: 'Required fields are missing' },
+        { error: 'Необходимо указать либо date, либо startDate и endDate' },
         { status: 400 }
-      );
+      )
     }
-    
-    // Дату храним в виде строки YYYY-MM-DD без времени
-    const dateStr = data.date; 
-    const workDayId = `wd-${data.employeeId}-${dateStr}`;
-    const timeEntryId = `te-${data.employeeId}-${dateStr}`;
-    
-    console.log(`Создаем/обновляем запись с ID: ${workDayId}, дата: ${dateStr}`);
-    
-    // Находим сотрудника
-    let employee = data.employee;
-    
-    if (!employee || employee.id !== data.employeeId) {
-      employee = mockEmployees.find((emp: Employee) => emp.id === data.employeeId);
+
+    // Создаем объект с условиями запроса
+    let where: any = {}
+
+    if (date) {
+      // Для табеля - только одна дата
+      const dateObj = new Date(date)
+      
+      // Устанавливаем временные границы для поиска по всему дню
+      const startOfDay = new Date(dateObj)
+      startOfDay.setHours(0, 0, 0, 0)
+      
+      const endOfDay = new Date(dateObj)
+      endOfDay.setHours(23, 59, 59, 999)
+      
+      where.date = {
+        gte: startOfDay,
+        lte: endOfDay
+      }
+    } else {
+      // Для отчетов - диапазон дат
+      where.date = {
+        gte: new Date(startDate!),
+        lte: new Date(`${endDate!}T23:59:59.999Z`)
+      }
     }
-    
-    // Если сотрудник не найден, создаем базовый объект
-    if (!employee) {
-      employee = {
-        id: data.employeeId,
-        name: "Неизвестный сотрудник",
-        position: "Должность не указана",
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+
+    // Добавляем фильтр по сотруднику, если указан
+    if (employeeId) {
+      where.employeeId = employeeId
     }
-    
-    // Создаем или обновляем запись времени
-    let timeEntry = null;
-    const dayType = data.dayType as DayType;
-    
-    if (dayType === 'WORK_DAY') {
-      // Нормализуем формат времени HH:MM
-      const normalizeTime = (time: string | null | undefined): string | null => {
-        if (!time) return null;
-        
-        try {
-          // Если это уже формат HH:MM
-          if (/^\d{1,2}:\d{2}$/.test(time)) {
-            const [hours, minutes] = time.split(':').map(Number);
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+    // Получаем рабочие дни с учетом фильтров
+    const workDays = await db.workDay.findMany({
+      where,
+      include: {
+        employee: true
+      },
+      orderBy: {
+        date: 'asc'
+      }
+    })
+
+    // Форматируем timeEntry, tasks и connections (преобразуем JSON строки в объекты)
+    const formattedWorkDays = workDays.map((day: any) => {
+      try {
+        // Обработка timeEntry с защитой от ошибок
+        let timeEntry = null;
+        if (day.timeEntry) {
+          try {
+            // Проверяем, не является ли timeEntry уже объектом
+            if (typeof day.timeEntry === 'object' && !Array.isArray(day.timeEntry)) {
+              timeEntry = day.timeEntry;
+            } else {
+              const parsed = JSON.parse(day.timeEntry);
+              // Проверяем, не получили ли мы строку JSON вместо объекта
+              if (typeof parsed === 'string') {
+                timeEntry = JSON.parse(parsed);
+              } else {
+                timeEntry = parsed;
+              }
+            }
+          } catch (e) {
+            console.error('Ошибка парсинга timeEntry:', e);
+            timeEntry = null;
           }
-          
-          // Если это ISO строка, извлекаем время
-          const match = time.match(/T(\d{2}:\d{2})/);
-          if (match && match[1]) {
-            return match[1];
-          }
-          
-          return null;
-        } catch (e) {
-          console.error('Ошибка нормализации времени:', time, e);
-          return null;
         }
-      };
-      
-      const startTime = normalizeTime(data.startTime);
-      const endTime = normalizeTime(data.endTime);
-      const lunchStartTime = normalizeTime(data.lunchStartTime);
-      const lunchEndTime = normalizeTime(data.lunchEndTime);
-      
-      if (startTime || endTime) {
-        timeEntry = {
-          id: timeEntryId,
-          startTime,
-          endTime,
-          lunchStartTime,
-          lunchEndTime,
-          workDayId,
-          createdAt: new Date(),
-          updatedAt: new Date()
+
+        // Обработка tasks с защитой от ошибок
+        let tasks = [];
+        if (day.tasks) {
+          try {
+            tasks = typeof day.tasks === 'object' ? day.tasks : JSON.parse(day.tasks);
+            if (typeof tasks === 'string') {
+              tasks = JSON.parse(tasks);
+            }
+          } catch (e) {
+            console.error('Ошибка парсинга tasks:', e);
+            tasks = [];
+          }
+        }
+
+        // Обработка connections с защитой от ошибок
+        let connections = [];
+        if (day.connections) {
+          try {
+            connections = typeof day.connections === 'object' ? day.connections : JSON.parse(day.connections);
+            if (typeof connections === 'string') {
+              connections = JSON.parse(connections);
+            }
+  } catch (e) {
+            console.error('Ошибка парсинга connections:', e);
+            connections = [];
+          }
+        }
+
+        return {
+          ...day,
+          timeEntry,
+          tasks,
+          connections
+        };
+      } catch (error) {
+        console.error('Ошибка обработки рабочего дня:', error, day);
+        return {
+          ...day,
+          timeEntry: null,
+          tasks: [],
+          connections: []
         };
       }
-    }
-    
-    // Создаем итоговый объект рабочего дня
-    const workDay: WorkDay = {
-      id: workDayId,
-      employeeId: data.employeeId,
-      date: dateStr, // Храним как строку
-      dayType,
-      comment: data.comment || null,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      timeEntry,
-      employee,
-      workStats: dayType === 'WORK_DAY' ? {
-        tasksCompleted: data.tasksCompleted || 0,
-        connectionsEstablished: data.connectionsEstablished || 0
-      } : undefined
-    };
-    
-    // Логируем созданный объект
-    console.log('Созданный объект рабочего дня:', {
-      id: workDay.id,
-      employeeId: workDay.employeeId,
-      date: workDay.date,
-      dayType: workDay.dayType,
-      timeEntry: workDay.timeEntry ? {
-        startTime: workDay.timeEntry.startTime,
-        endTime: workDay.timeEntry.endTime
-      } : null
-    });
-    
-    // Обновляем или добавляем запись в базу
-    const existingIndex = workDaysData.findIndex(wd => wd.id === workDayId);
-    
-    if (existingIndex >= 0) {
-      console.log(`Обновляем существующую запись с индексом ${existingIndex}`);
-      workDaysData[existingIndex] = workDay;
-    } else {
-      console.log('Добавляем новую запись');
-      workDaysData.push(workDay);
-    }
-    
-    // Выводим информацию о базе данных после обновления
-    console.log(`База данных содержит ${workDaysData.length} записей`);
-    
-    // Сохраняем обновленные данные в файловой системе
-    saveWorkDaysToFile();
-    
-    return NextResponse.json(workDay);
+    })
+
+    return NextResponse.json(formattedWorkDays)
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Ошибка при получении рабочих дней:', error)
     return NextResponse.json(
-      { error: 'Failed to process request' },
+      { error: 'Произошла ошибка при получении рабочих дней' },
       { status: 500 }
-    );
+    )
+  }
+}
+
+// POST /api/workdays - создание нового рабочего дня
+export async function POST(request: NextRequest) {
+  try {
+    const data = await request.json()
+    
+    // Проверка обязательных полей
+    if (!data.employeeId || !data.date || !data.dayType) {
+      return NextResponse.json(
+        { error: 'Отсутствуют обязательные поля: employeeId, date, dayType' },
+        { status: 400 }
+      )
+    }
+
+    // Проверяем, существует ли уже запись для этого сотрудника и даты
+    const existingWorkDay = await db.workDay.findFirst({
+      where: {
+        employeeId: data.employeeId,
+        date: new Date(data.date)
+      }
+    })
+
+    if (existingWorkDay) {
+      return NextResponse.json(
+        { error: 'Запись для этого сотрудника и даты уже существует' },
+        { status: 409 }
+      )
+    }
+
+    // Удаляем лишние поля
+    const { id, employee, createdAt, updatedAt, ...createData } = data
+
+    // Проверяем, является ли timeEntry уже строкой JSON
+    let timeEntryData = createData.timeEntry
+    if (timeEntryData) {
+      try {
+        // Если timeEntry - это объект, сериализуем его
+        if (typeof timeEntryData === 'object') {
+          timeEntryData = JSON.stringify(timeEntryData)
+        } 
+        // Если это строка, проверяем, не является ли она уже сериализованным JSON
+        else if (typeof timeEntryData === 'string') {
+          try {
+            // Пробуем распарсить - если успешно, значит это валидный JSON
+            const parsed = JSON.parse(timeEntryData)
+            // Если parsed - строка, возможно это двойная сериализация
+            if (typeof parsed === 'string') {
+              try {
+                // Пробуем распарсить еще раз
+                JSON.parse(parsed)
+                // Если дошли сюда без ошибок, значит это была двойная сериализация
+                // Оставляем как есть, т.к. первый JSON.parse уже вернул правильный формат
+                timeEntryData = parsed
+              } catch (e) {
+                // Если не удалось распарсить второй раз, то первый парсинг был корректным
+                timeEntryData = JSON.stringify(parsed)
+              }
+            } else {
+              // Если parsed не строка, то первоначальная строка была корректным JSON
+              // Просто обеспечиваем, что это валидный JSON-формат
+              timeEntryData = JSON.stringify(parsed)
+            }
+          } catch (e) {
+            // Если не удалось распарсить, то это не JSON - сериализуем
+            timeEntryData = JSON.stringify(timeEntryData)
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка обработки timeEntry:', error)
+        timeEntryData = null
+      }
+    }
+
+    // Форматируем данные перед сохранением
+    const formattedData = {
+      ...createData,
+      date: new Date(createData.date),
+      timeEntry: timeEntryData,
+      tasks: createData.tasks ? (typeof createData.tasks === 'string' ? createData.tasks : JSON.stringify(createData.tasks)) : null,
+      connections: createData.connections ? (typeof createData.connections === 'string' ? createData.connections : JSON.stringify(createData.connections)) : null
+    }
+
+    // Создаем новый рабочий день
+    const newWorkDay = await db.workDay.create({
+      data: formattedData,
+      include: {
+        employee: true
+      }
+    })
+
+    // Форматируем ответ
+    const result = {
+      ...newWorkDay,
+      timeEntry: newWorkDay.timeEntry ? JSON.parse(newWorkDay.timeEntry as string) : null,
+      tasks: newWorkDay.tasks ? JSON.parse(newWorkDay.tasks as string) : [],
+      connections: newWorkDay.connections ? JSON.parse(newWorkDay.connections as string) : []
+    }
+
+    return NextResponse.json(result, { status: 201 })
+  } catch (error: any) {
+    // Расширенная обработка ошибок
+    console.error('Ошибка при создании рабочего дня:', error)
+    let errorMessage = 'Произошла ошибка при создании рабочего дня'
+    
+    if (error.message) {
+      errorMessage += `: ${error.message}`
+    }
+    
+    if (error.code) {
+      errorMessage += ` (код: ${error.code})`
+    }
+    
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT /api/workdays - обновление рабочего дня
+export async function PUT(request: NextRequest) {
+  try {
+    const data = await request.json()
+    
+    // Проверка ID
+    if (!data.id) {
+      return NextResponse.json(
+        { error: 'Отсутствует ID записи' },
+        { status: 400 }
+      )
+    }
+
+    // Получаем существующую запись
+    const existingWorkDay = await db.workDay.findUnique({
+      where: { id: data.id }
+    })
+
+    if (!existingWorkDay) {
+      return NextResponse.json(
+        { error: 'Запись не найдена' },
+        { status: 404 }
+      )
+    }
+
+    // Подготавливаем данные для обновления
+    // Удаляем поля, которые не должны быть в запросе обновления
+    const { employee, employeeId, createdAt, updatedAt, ...updateData } = data
+    
+    // Проверяем, является ли timeEntry уже строкой JSON
+    let timeEntryData = updateData.timeEntry
+    if (timeEntryData) {
+      try {
+        // Если timeEntry - это объект, сериализуем его
+        if (typeof timeEntryData === 'object') {
+          timeEntryData = JSON.stringify(timeEntryData)
+        } 
+        // Если это строка, проверяем, не является ли она уже сериализованным JSON
+        else if (typeof timeEntryData === 'string') {
+          try {
+            // Пробуем распарсить - если успешно, значит это валидный JSON
+            const parsed = JSON.parse(timeEntryData)
+            // Если parsed - строка, возможно это двойная сериализация
+            if (typeof parsed === 'string') {
+              try {
+                // Пробуем распарсить еще раз
+                JSON.parse(parsed)
+                // Если дошли сюда без ошибок, значит это была двойная сериализация
+                // Оставляем как есть, т.к. первый JSON.parse уже вернул правильный формат
+                timeEntryData = parsed
+              } catch (e) {
+                // Если не удалось распарсить второй раз, то первый парсинг был корректным
+                timeEntryData = JSON.stringify(parsed)
+              }
+            } else {
+              // Если parsed не строка, то первоначальная строка была корректным JSON
+              // Просто обеспечиваем, что это валидный JSON-формат
+              timeEntryData = JSON.stringify(parsed)
+            }
+          } catch (e) {
+            // Если не удалось распарсить, то это не JSON - сериализуем
+            timeEntryData = JSON.stringify(timeEntryData)
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка обработки timeEntry:', error)
+        timeEntryData = null
+      }
+    }
+    
+    // Форматируем данные перед обновлением
+    const formattedData = {
+      ...updateData,
+      date: updateData.date ? new Date(updateData.date) : undefined,
+      timeEntry: timeEntryData,
+      tasks: updateData.tasks ? (typeof updateData.tasks === 'string' ? updateData.tasks : JSON.stringify(updateData.tasks)) : undefined,
+      connections: updateData.connections ? (typeof updateData.connections === 'string' ? updateData.connections : JSON.stringify(updateData.connections)) : undefined
+    }
+
+    // Обновляем запись
+    const updatedWorkDay = await db.workDay.update({
+      where: { id: data.id },
+      data: formattedData,
+      include: {
+        employee: true
+      }
+    })
+
+    // Форматируем ответ
+    const result = {
+      ...updatedWorkDay,
+      timeEntry: updatedWorkDay.timeEntry ? JSON.parse(updatedWorkDay.timeEntry as string) : null,
+      tasks: updatedWorkDay.tasks ? JSON.parse(updatedWorkDay.tasks as string) : [],
+      connections: updatedWorkDay.connections ? JSON.parse(updatedWorkDay.connections as string) : []
+    }
+
+    return NextResponse.json(result)
+  } catch (error: any) {
+    // Расширенная обработка ошибок
+    console.error('Ошибка при обновлении рабочего дня:', error)
+    let errorMessage = 'Произошла ошибка при обновлении рабочего дня'
+    
+    if (error.message) {
+      errorMessage += `: ${error.message}`
+    }
+    
+    if (error.code) {
+      errorMessage += ` (код: ${error.code})`
+    }
+    
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/workdays - удаление рабочего дня
+export async function DELETE(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Отсутствует ID записи' },
+        { status: 400 }
+      )
+    }
+
+    // Проверяем существование записи
+    const existingWorkDay = await db.workDay.findUnique({
+      where: { id }
+    })
+
+    if (!existingWorkDay) {
+      return NextResponse.json(
+        { error: 'Запись не найдена' },
+        { status: 404 }
+      )
+    }
+
+    // Удаляем запись
+    await db.workDay.delete({
+      where: { id }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Ошибка при удалении рабочего дня:', error)
+    return NextResponse.json(
+      { error: 'Произошла ошибка при удалении рабочего дня' },
+      { status: 500 }
+    )
   }
 } 

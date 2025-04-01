@@ -27,9 +27,9 @@ model WorkDay {
   employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   date        DateTime
   dayType     String   // WORK_DAY, DAY_OFF, VACATION, SICK_LEAVE, ABSENCE, UNPAID_LEAVE
-  timeEntry   String?  // Для хранения времени (startTime, endTime, lunchStartTime, lunchEndTime)
-  tasks       String?  // Для хранения массива задач JSON
-  connections String?  // Для хранения массива связей JSON
+  timeEntry   Json?    // Для хранения времени (startTime, endTime, lunchStartTime, lunchEndTime)
+  tasks       Json?    // Для хранения массива задач JSON
+  connections Json?    // Для хранения массива связей JSON
   comment     String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

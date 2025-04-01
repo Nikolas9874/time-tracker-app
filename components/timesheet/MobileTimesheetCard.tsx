@@ -1,206 +1,304 @@
 'use client';
 
-import React from 'react';
-import { WorkDay, DayType, DAY_TYPE_LABELS } from '@/lib/types';
-import Select from '../ui/Select';
-import TimeInput from '../ui/TimeInput';
-import Button from '../ui/Button';
+import React, { useState } from 'react';
+import { formatTime } from '@/lib/utils';
+import { DayType, WorkDay, TimeEntry } from '@/types/workday';
+import Button from '@/components/ui/Button';
 
 interface MobileTimesheetCardProps {
   workDay: WorkDay;
-  employeeData: {
-    dayType: DayType;
-    startTime: string;
-    endTime: string;
-    lunchStartTime: string;
-    lunchEndTime: string;
-    tasksCompleted: string;
-    connectionsEstablished: string;
-    comment: string;
-  };
-  index: number;
-  isSaving: boolean;
-  netDuration: string;
-  totalWorkTime: string;
-  onDayTypeChange: (employeeId: string, dayType: DayType) => void;
-  onChange: (employeeId: string, field: string, value: string) => void;
-  onSave: (workDay: WorkDay) => void;
+  onSave: (workDay: any) => Promise<boolean>;
+  onDelete: (workDayId: string) => Promise<boolean>;
 }
 
-const MobileTimesheetCard: React.FC<MobileTimesheetCardProps> = ({
-  workDay,
-  employeeData,
-  index,
-  isSaving,
-  netDuration,
-  totalWorkTime,
-  onDayTypeChange,
-  onChange,
-  onSave
-}) => {
-  // Преобразуем типы дня в опции для селекта
-  const dayTypeOptions = Object.entries(DAY_TYPE_LABELS).map(([value, label]) => ({
-    value,
-    label
-  }));
+// Константы для типов дней
+const DAY_TYPE_LABELS: Record<string, string> = {
+  'WORK_DAY': 'Рабочий день',
+  'DAY_OFF': 'Выходной',
+  'VACATION': 'Отпуск',
+  'SICK_LEAVE': 'Больничный',
+  'ABSENCE': 'Отсутствие',
+  'UNPAID_LEAVE': 'Отпуск за свой счет'
+};
 
-  if (!workDay || !workDay.employeeId) {
-    return null;
+export default function MobileTimesheetCard({
+  workDay,
+  onSave,
+  onDelete
+}: MobileTimesheetCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingData, setEditingData] = useState<{
+    dayType: DayType;
+    timeEntry: TimeEntry | null;
+    comment: string;
+  }>({
+    dayType: workDay.dayType,
+    timeEntry: workDay.timeEntry || null,
+    comment: workDay.comment || ''
+  });
+
+  // Значения по умолчанию для времени
+  const defaultStartTime = '09:00';
+  const defaultEndTime = '18:00';
+  const defaultLunchStartTime = '13:00';
+  const defaultLunchEndTime = '14:00';
+
+  // Обработчик изменения типа дня
+  const handleDayTypeChange = (dayType: string) => {
+    setEditingData(prev => ({
+      ...prev,
+      dayType: dayType as DayType,
+      timeEntry: dayType === 'WORK_DAY' 
+        ? {
+            startTime: new Date(`${workDay.date}T${defaultStartTime}`),
+            endTime: new Date(`${workDay.date}T${defaultEndTime}`),
+            lunchStartTime: new Date(`${workDay.date}T${defaultLunchStartTime}`),
+            lunchEndTime: new Date(`${workDay.date}T${defaultLunchEndTime}`)
+          }
+        : null
+    }));
+  };
+
+  // Обработчик изменения времени
+  const handleTimeChange = (field: keyof TimeEntry, timeValue: string) => {
+    if (!timeValue) return;
+    
+    setEditingData(prev => {
+      // Создаем новый объект timeEntry, если его нет
+      const prevTimeEntry = prev.timeEntry || {
+        startTime: new Date(`${workDay.date}T${defaultStartTime}`),
+        endTime: new Date(`${workDay.date}T${defaultEndTime}`)
+      };
+      
+      const dateObj = new Date(`${workDay.date}T${timeValue}:00`);
+      
+      return {
+        ...prev,
+        timeEntry: {
+          ...prevTimeEntry,
+          [field]: dateObj
+        }
+      };
+    });
+  };
+
+  // Обработчик изменения комментария
+  const handleCommentChange = (comment: string) => {
+    setEditingData(prev => ({
+      ...prev,
+      comment
+    }));
+  };
+
+  // Сохранение данных
+  const handleSave = async () => {
+    setIsSaving(true);
+    
+    try {
+      const success = await onSave({
+        id: workDay.id,
+        employeeId: workDay.employeeId,
+        date: workDay.date,
+        ...editingData
+      });
+      
+      if (success) {
+        setIsEditing(false);
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Отмена редактирования
+  const handleCancel = () => {
+    setEditingData({
+      dayType: workDay.dayType,
+      timeEntry: workDay.timeEntry || null,
+      comment: workDay.comment || ''
+    });
+    setIsEditing(false);
+  };
+
+  // Переключение режима редактирования
+  const toggleEdit = () => {
+    setIsEditing(!isEditing);
+  };
+
+  // Обработчик удаления
+  const handleDelete = async () => {
+    if (window.confirm('Вы уверены, что хотите удалить эту запись?')) {
+      await onDelete(workDay.id);
+    }
+  };
+
+  // Форматирование времени для отображения
+  const displayTime = (time: Date | null | undefined) => {
+    try {
+      return time ? formatTime(time) : '--:--'
+    } catch (e) {
+      console.error('Ошибка отображения времени:', e)
+      return '--:--'
+    }
   }
 
   return (
-    <div className="card bg-white shadow-sm mb-3 overflow-hidden">
-      <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div className="flex items-center">
-          <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-indigo-100 text-indigo-800 font-medium mr-2">
-            {index + 1}
-          </span>
-          <div>
-            <div className="font-medium text-gray-900">{workDay.employee?.name || 'Сотрудник'}</div>
-            <div className="text-xs text-gray-500">{workDay.employee?.position || 'Должность'}</div>
-          </div>
+    <div className="bg-white rounded-lg shadow-md p-4 mb-4">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h3 className="text-lg font-medium">{workDay.employee?.name || 'Сотрудник'}</h3>
+          <p className="text-sm text-gray-500">{workDay.employee?.position || ''}</p>
+        </div>
+        
+        <div className="flex space-x-2">
+          {isEditing ? (
+            <>
+              <button 
+                onClick={handleSave}
+                disabled={isSaving}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                {isSaving ? 'Сохранение...' : 'Сохранить'}
+              </button>
+              <button 
+                onClick={handleCancel}
+                disabled={isSaving}
+                className="text-gray-600 hover:text-gray-800 text-sm font-medium"
+              >
+                Отмена
+              </button>
+            </>
+          ) : (
+            <>
+              <button 
+                onClick={toggleEdit}
+                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+              >
+                Редактировать
+              </button>
+              <button 
+                onClick={handleDelete}
+                className="text-red-600 hover:text-red-800 text-sm font-medium"
+              >
+                Удалить
+              </button>
+            </>
+          )}
         </div>
       </div>
       
-      <div className="px-3 py-3 space-y-3">
-        {/* Тип дня */}
-        <div className="grid grid-cols-3 gap-2 items-center">
-          <div className="text-xs font-medium text-gray-700">Тип дня:</div>
-          <div className="col-span-2">
-            <Select
-              options={dayTypeOptions}
-              value={employeeData.dayType}
-              onChange={(e) => onDayTypeChange(workDay.employeeId, e.target.value as DayType)}
-              className="text-xs h-8 w-full"
-              disabled={isSaving}
-            />
+      <div className="mb-3">
+        <div className="text-sm font-medium mb-1">Тип дня:</div>
+        {isEditing ? (
+          <select
+            value={editingData.dayType}
+            onChange={(e) => handleDayTypeChange(e.target.value)}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm mb-2"
+            disabled={isSaving}
+          >
+            {Object.entries(DAY_TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="bg-gray-100 rounded-md px-3 py-2 text-sm">
+            {DAY_TYPE_LABELS[workDay.dayType] || workDay.dayType}
+          </div>
+        )}
+      </div>
+      
+      {(editingData.dayType === 'WORK_DAY' || (!isEditing && workDay.dayType === 'WORK_DAY')) && (
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <div className="text-sm font-medium mb-1">Начало:</div>
+            {isEditing ? (
+              <input
+                type="time"
+                value={editingData.timeEntry ? formatTime(editingData.timeEntry.startTime) : '09:00'}
+                onChange={(e) => handleTimeChange('startTime', e.target.value)}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                disabled={isSaving}
+              />
+            ) : (
+              <div className="bg-gray-100 rounded-md px-3 py-2 text-sm">
+                {displayTime(workDay.timeEntry?.startTime)}
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium mb-1">Конец:</div>
+            {isEditing ? (
+              <input
+                type="time"
+                value={editingData.timeEntry ? formatTime(editingData.timeEntry.endTime) : '18:00'}
+                onChange={(e) => handleTimeChange('endTime', e.target.value)}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                disabled={isSaving}
+              />
+            ) : (
+              <div className="bg-gray-100 rounded-md px-3 py-2 text-sm">
+                {displayTime(workDay.timeEntry?.endTime)}
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium mb-1">Обед (начало):</div>
+            {isEditing ? (
+              <input
+                type="time"
+                value={editingData.timeEntry && editingData.timeEntry.lunchStartTime ? formatTime(editingData.timeEntry.lunchStartTime) : '13:00'}
+                onChange={(e) => handleTimeChange('lunchStartTime', e.target.value)}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                disabled={isSaving}
+              />
+            ) : (
+              <div className="bg-gray-100 rounded-md px-3 py-2 text-sm">
+                {displayTime(workDay.timeEntry?.lunchStartTime)}
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <div className="text-sm font-medium mb-1">Обед (конец):</div>
+            {isEditing ? (
+              <input
+                type="time"
+                value={editingData.timeEntry && editingData.timeEntry.lunchEndTime ? formatTime(editingData.timeEntry.lunchEndTime) : '14:00'}
+                onChange={(e) => handleTimeChange('lunchEndTime', e.target.value)}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                disabled={isSaving}
+              />
+            ) : (
+              <div className="bg-gray-100 rounded-md px-3 py-2 text-sm">
+                {displayTime(workDay.timeEntry?.lunchEndTime)}
+              </div>
+            )}
           </div>
         </div>
-        
-        {/* Времена (показываем только для рабочего дня) */}
-        {employeeData.dayType === 'WORK_DAY' && (
-          <>
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <div className="text-xs font-medium text-gray-700">Начало работы:</div>
-              <div className="col-span-2">
-                <TimeInput
-                  value={employeeData.startTime}
-                  onChange={(e) => onChange(workDay.employeeId, 'startTime', e.target.value)}
-                  className="h-8 text-xs w-full"
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <div className="text-xs font-medium text-gray-700">Конец работы:</div>
-              <div className="col-span-2">
-                <TimeInput
-                  value={employeeData.endTime}
-                  onChange={(e) => onChange(workDay.employeeId, 'endTime', e.target.value)}
-                  className="h-8 text-xs w-full"
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <div className="text-xs font-medium text-gray-700">Начало обеда:</div>
-              <div className="col-span-2">
-                <TimeInput
-                  value={employeeData.lunchStartTime}
-                  onChange={(e) => onChange(workDay.employeeId, 'lunchStartTime', e.target.value)}
-                  className="h-8 text-xs w-full"
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <div className="text-xs font-medium text-gray-700">Конец обеда:</div>
-              <div className="col-span-2">
-                <TimeInput
-                  value={employeeData.lunchEndTime}
-                  onChange={(e) => onChange(workDay.employeeId, 'lunchEndTime', e.target.value)}
-                  className="h-8 text-xs w-full"
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <div className="text-xs font-medium text-gray-700">Рабочее время:</div>
-              <div className="col-span-2 flex space-x-2">
-                <div className="bg-gray-50 rounded px-3 py-1 text-xs flex-1 text-center">
-                  <div className="text-gray-500 mb-1">Всего</div>
-                  <div className="font-medium">{totalWorkTime}</div>
-                </div>
-                <div className="bg-gray-50 rounded px-3 py-1 text-xs flex-1 text-center">
-                  <div className="text-gray-500 mb-1">Чистое</div>
-                  <div className="font-medium text-indigo-600">{netDuration}</div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-        
-        {/* Показатели и комментарий */}
-        {employeeData.dayType === 'WORK_DAY' && (
-          <>
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <div className="text-xs font-medium text-gray-700">Выполнено задач:</div>
-              <div className="col-span-2">
-                <input
-                  type="number"
-                  min="0"
-                  value={employeeData.tasksCompleted}
-                  onChange={(e) => onChange(workDay.employeeId, 'tasksCompleted', e.target.value)}
-                  className="w-full h-8 text-xs rounded border-gray-300"
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-2 items-center">
-              <div className="text-xs font-medium text-gray-700">Подключений:</div>
-              <div className="col-span-2">
-                <input
-                  type="number"
-                  min="0"
-                  value={employeeData.connectionsEstablished}
-                  onChange={(e) => onChange(workDay.employeeId, 'connectionsEstablished', e.target.value)}
-                  className="w-full h-8 text-xs rounded border-gray-300"
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
-          </>
-        )}
-        
-        <div className="space-y-1">
-          <div className="text-xs font-medium text-gray-700">Комментарий:</div>
+      )}
+      
+      <div>
+        <div className="text-sm font-medium mb-1">Комментарий:</div>
+        {isEditing ? (
           <input
             type="text"
-            placeholder="Комментарий..."
-            value={employeeData.comment}
-            onChange={(e) => onChange(workDay.employeeId, 'comment', e.target.value)}
-            className="w-full h-8 text-xs rounded border-gray-300"
+            value={editingData.comment || ''}
+            onChange={(e) => handleCommentChange(e.target.value)}
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            placeholder="Комментарий"
             disabled={isSaving}
           />
-        </div>
-      </div>
-      
-      <div className="px-3 py-2 bg-gray-50 border-t border-gray-200 flex justify-end">
-        <Button 
-          onClick={() => onSave(workDay)}
-          disabled={isSaving}
-          className="h-8 text-xs"
-        >
-          {isSaving ? 'Сохранение...' : 'Сохранить'}
-        </Button>
+        ) : (
+          <div className="bg-gray-100 rounded-md px-3 py-2 text-sm min-h-[40px]">
+            {workDay.comment || <span className="text-gray-400">Нет комментария</span>}
+          </div>
+        )}
       </div>
     </div>
   );
-};
-
-export default MobileTimesheetCard; 
+} 

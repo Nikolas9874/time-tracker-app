@@ -221,6 +221,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     changePassword
   };
 
+  // Для отладки добавляем вывод данных авторизации в консоль
+  useEffect(() => {
+    if (user) {
+      console.log(`Пользователь авторизован: ${user.username}, роль: ${user.role}`);
+      console.log(`Токен ${token ? 'присутствует' : 'отсутствует'}`);
+    } else {
+      console.log('Пользователь не авторизован');
+    }
+  }, [user, token]);
+
   return (
     <AuthContext.Provider value={contextValue}>
       {children}

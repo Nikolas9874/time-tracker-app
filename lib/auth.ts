@@ -132,9 +132,14 @@ export async function verifyAuth(
     } 
     // Ищем токен в куки
     else if (cookieHeader) {
-      const cookieMatch = cookieHeader.match(/authToken=([^;]+)/);
-      if (cookieMatch && cookieMatch[1]) {
-        token = cookieMatch[1];
+      // Поиск токена в разных вариантах куки
+      const cookieMatchAuthToken = cookieHeader.match(/authToken=([^;]+)/);
+      const cookieMatchAuth = cookieHeader.match(/auth_token=([^;]+)/);
+      
+      if (cookieMatchAuthToken && cookieMatchAuthToken[1]) {
+        token = cookieMatchAuthToken[1];
+      } else if (cookieMatchAuth && cookieMatchAuth[1]) {
+        token = cookieMatchAuth[1];
       }
     }
     
@@ -144,6 +149,7 @@ export async function verifyAuth(
       if (options?.requireAuth === false) {
         return { success: true };
       }
+      console.log('Токен не найден в запросе');
       return { success: false };
     }
     
@@ -155,9 +161,11 @@ export async function verifyAuth(
       if (options?.requireAuth === false) {
         return { success: true };
       }
+      console.log('Пользователь не найден по токену');
       return { success: false };
     }
     
+    console.log(`Успешная аутентификация пользователя ${user.username} с ролью ${user.role}`);
     return { success: true, user };
   } catch (error) {
     console.error('Auth verification error:', error);

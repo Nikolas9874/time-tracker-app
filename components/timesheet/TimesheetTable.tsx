@@ -8,13 +8,23 @@ import TimeInput from '../ui/TimeInput'
 import Button from '../ui/Button'
 import MobileTimesheetCard from './MobileTimesheetCard'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { toast } from 'react-hot-toast'
 
 interface TimesheetTableProps {
   workDays: WorkDay[]
-  onSaveWorkDay: (data: any) => Promise<void>
+  currentDate: string
+  isLoading: boolean
+  onSave: (workDay: Partial<WorkDay>) => Promise<boolean>
+  onDelete: (workDayId: string) => Promise<boolean>
 }
 
-const TimesheetTable = ({ workDays, onSaveWorkDay }: TimesheetTableProps) => {
+const TimesheetTable = ({
+  workDays,
+  currentDate,
+  isLoading,
+  onSave,
+  onDelete
+}: TimesheetTableProps) => {
   // Hooks для определения размера экрана
   const isMobile = useMediaQuery('(max-width: 768px)');
   
@@ -280,7 +290,7 @@ const TimesheetTable = ({ workDays, onSaveWorkDay }: TimesheetTableProps) => {
       console.log('Отправляем данные:', payload)
       
       // Отправляем данные на сервер и ждем их сохранения
-      await onSaveWorkDay(payload)
+      await onSave(payload)
       
       console.log('Данные успешно сохранены для сотрудника:', employeeId)
     } catch (error) {
@@ -313,6 +323,63 @@ const TimesheetTable = ({ workDays, onSaveWorkDay }: TimesheetTableProps) => {
       console.error('Ошибка при сохранении всех данных:', error)
     } finally {
       setIsBatchSaving(false)
+    }
+  }
+  
+  // Создание записей табеля для всех сотрудников, у которых еще нет записи
+  const handleCreateEntriesForAllEmployees = async () => {
+    setIsBatchSaving(true)
+    
+    try {
+      // Получаем сотрудников, для которых еще нет записей
+      const employeesWithoutEntries = employees.filter(emp => 
+        !workDays.some(wd => wd.employeeId === emp.id)
+      )
+      
+      if (employeesWithoutEntries.length === 0) {
+        toast.info('Все сотрудники уже имеют записи на эту дату')
+        return
+      }
+      
+      // Создаем записи для каждого сотрудника
+      for (const employee of employeesWithoutEntries) {
+        await onSave({
+          employeeId: employee.id,
+          date: currentDate,
+          dayType: 'WORK_DAY',
+          timeEntry: {
+            startTime: null,
+            endTime: null,
+            lunchStartTime: null,
+            lunchEndTime: null
+          },
+          tasks: [],
+          connections: [],
+          comment: ''
+        })
+      }
+      
+      toast.success(`Создано ${employeesWithoutEntries.length} записей`)
+    } catch (error) {
+      console.error('Ошибка создания записей:', error)
+      toast.error('Не удалось создать записи')
+    } finally {
+      setIsBatchSaving(false)
+    }
+  }
+  
+  // Обработчик удаления записи
+  const handleDelete = async (workDayId: string) => {
+    if (!window.confirm('Вы уверены, что хотите удалить эту запись?')) {
+      return
+    }
+    
+    try {
+      await onDelete(workDayId)
+      toast.success('Запись удалена')
+    } catch (error) {
+      console.error('Ошибка удаления:', error)
+      toast.error('Не удалось удалить запись')
     }
   }
   
@@ -508,13 +575,13 @@ const TimesheetTable = ({ workDays, onSaveWorkDay }: TimesheetTableProps) => {
                     </td>
                     <td className="px-2 py-1.5 text-center w-20">
                       <Button 
-                        onClick={() => handleSaveEmployee(workDay)}
+                        onClick={() => handleDelete(workDay.id)}
                         disabled={isSaving}
                         size="sm"
                         variant="outline"
                         className="h-7 text-xs"
                       >
-                        {isSaving ? '...' : 'Сохранить'}
+                        {isSaving ? '...' : 'Удалить'}
                       </Button>
                     </td>
                   </tr>

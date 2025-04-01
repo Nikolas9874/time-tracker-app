@@ -25,8 +25,13 @@ const CommitHistory: React.FC<{ onRollback: (hash: string) => void }> = ({ onRol
       setIsLoading(true);
       setError(null);
       
-      // Получаем токен из контекста или localStorage
-      const authToken = token || localStorage.getItem('auth_token');
+      // Получаем токен из контекста авторизации
+      const authToken = token;
+      
+      // Сохраняем токен в localStorage для использования на других страницах
+      if (authToken && typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', authToken);
+      }
       
       const response = await fetch('/api/update/history', {
         headers: {
@@ -38,6 +43,8 @@ const CommitHistory: React.FC<{ onRollback: (hash: string) => void }> = ({ onRol
       if (!response.ok) {
         if (response.status === 404) {
           setError('API маршрут истории коммитов не найден');
+        } else if (response.status === 401) {
+          setError('Ошибка при загрузке истории коммитов: У вас нет доступа к этому ресурсу. Необходимы права администратора.');
         } else {
           throw new Error(`Ошибка при загрузке истории коммитов: ${response.status}`);
         }
@@ -414,15 +421,24 @@ const SettingsPage = () => {
   // Функция для обновления истории коммитов
   const fetchCommitHistory = async () => {
     try {
-      // Получаем токен из контекста или localStorage
-      const authToken = token || localStorage.getItem('auth_token');
+      // Получаем токен из контекста авторизации
+      const authToken = token;
       
-      await fetch('/api/update/history', {
+      // Сохраняем токен в localStorage для использования на других страницах
+      if (authToken && typeof window !== 'undefined') {
+        localStorage.setItem('auth_token', authToken);
+      }
+      
+      const response = await fetch('/api/update/history', {
         headers: {
           ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
         },
         credentials: 'include'
       });
+      
+      if (!response.ok) {
+        console.error(`Ошибка при обновлении истории коммитов: ${response.status}`);
+      }
       
       // Результат обрабатывается в компоненте CommitHistory
     } catch (error) {

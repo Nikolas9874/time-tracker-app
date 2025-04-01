@@ -2,6 +2,17 @@ import { format, addDays, parseISO, isValid } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { type ClassValue, clsx } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { PrismaClient } from '@prisma/client'
+
+declare global {
+  var db: PrismaClient | undefined
+}
+
+export const db = global.db || new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') {
+  global.db = db
+}
 
 // Утилита для объединения классов tailwind
 export function cn(...inputs: ClassValue[]) {
@@ -30,11 +41,57 @@ export function formatWeekday(date: Date | string): string {
 export function formatTime(date: Date | string | null): string {
   if (!date) return '--:--'
   try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date
-    if (!isValid(dateObj)) return '--:--'
+    // Если дата уже является строкой времени в формате HH:mm, просто возвращаем ее
+    if (typeof date === 'string' && /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(date)) {
+      return date
+    }
+    
+    // Если строка выглядит как JSON объект, пробуем распарсить
+    if (typeof date === 'string' && date.includes('{') && date.includes('}')) {
+      try {
+        // Пробуем извлечь значения из сериализованного JSON
+        const parsed = JSON.parse(date)
+        // Пробуем найти startTime, endTime и т.д.
+        if (parsed.startTime) return formatTime(parsed.startTime)
+        if (parsed.endTime) return formatTime(parsed.endTime)
+        if (parsed.lunchStartTime) return formatTime(parsed.lunchStartTime)
+        if (parsed.lunchEndTime) return formatTime(parsed.lunchEndTime)
+        
+        // Если ничего не нашли, возвращаем значение по умолчанию
+        return '--:--'
+      } catch (e) {
+        // Если не удалось распарсить, просто продолжаем обработку
+        console.warn('Не удалось распарсить JSON строку времени:', date)
+      }
+    }
+    
+    let dateObj: Date
+    
+    if (typeof date === 'string') {
+      // Если дата в формате ISO (с Z в конце)
+      if (date.includes('T') && date.includes('Z')) {
+        dateObj = new Date(date)
+      } else if (date.includes('T')) {
+        // Если дата в формате ISO без Z
+        dateObj = new Date(date)
+      } else {
+        // Если просто дата, добавляем время 00:00:00
+        dateObj = new Date(`${date}T00:00:00`)
+      }
+    } else {
+      dateObj = date
+    }
+    
+    // Проверяем валидность даты
+    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+      console.error('Невалидная дата для formatTime:', date)
+      return '--:--'
+    }
+    
+    // Теперь dateObj точно валидный объект Date, используем format из date-fns
     return format(dateObj, 'HH:mm')
   } catch (error) {
-    console.error('Error formatting time:', error)
+    console.error('Ошибка форматирования времени:', error, 'для даты:', date)
     return '--:--'
   }
 }
@@ -206,4 +263,27 @@ export function getCookie(name: string): string | null {
 // Удаление cookie
 export function removeCookie(name: string): void {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+}
+
+// Добавляем функцию formatDate
+export function formatDate(date: Date | string): string {
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date
+    
+    // Проверяем валидность даты
+    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+      console.error('Невалидная дата для formatDate:', date)
+      return 'Некорректная дата'
+    }
+    
+    // Используем Intl.DateTimeFormat для локализованного форматирования
+    return dateObj.toLocaleDateString('ru-RU', { 
+      day: 'numeric', 
+      month: 'long', 
+      year: 'numeric' 
+    })
+  } catch (error) {
+    console.error('Ошибка форматирования даты:', error, 'для даты:', date)
+    return 'Ошибка даты'
+  }
 } 
