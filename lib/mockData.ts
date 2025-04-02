@@ -43,33 +43,32 @@ export const mockEmployees: Employee[] = [
 // Тестовые пользователи
 export const mockUsers: User[] = [
   {
-    id: 'user-1',
+    id: '1',
     username: 'admin',
-    email: 'admin@example.com',
-    // пароль "admin123" (простой текст для тестирования)
-    password: 'admin123',
     name: 'Администратор',
+    email: 'admin@example.com',
+    password: 'admin123',
     role: 'ADMIN',
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
-    id: 'user-2',
-    username: 'manager',
-    // пароль "manager123" (простой текст для тестирования)
-    password: 'manager123',
-    name: 'Менеджер',
-    role: 'MANAGER',
+    id: '2',
+    username: 'operator',
+    name: 'Оператор',
+    email: 'operator@example.com',
+    password: 'operator123',
+    role: 'OPERATOR',
     createdAt: new Date(),
     updatedAt: new Date()
   },
   {
-    id: 'user-3',
-    username: 'user',
-    // пароль "user123" (простой текст для тестирования)
-    password: 'user123',
-    name: 'Пользователь',
-    role: 'USER',
+    id: '3',
+    username: 'manager',
+    name: 'Менеджер',
+    email: 'manager@example.com',
+    password: 'manager123',
+    role: 'MANAGER',
     createdAt: new Date(),
     updatedAt: new Date()
   }

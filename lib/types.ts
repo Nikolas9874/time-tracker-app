@@ -2,7 +2,7 @@
 export type DayType = 'WORK_DAY' | 'DAY_OFF' | 'VACATION' | 'SICK_LEAVE' | 'ABSENCE' | 'UNPAID_LEAVE'
 
 // Типы ролей пользователей
-export type UserRole = 'ADMIN' | 'MANAGER' | 'USER'
+export type UserRole = 'ADMIN' | 'MANAGER' | 'USER' | 'OPERATOR'
 
 // Модель пользователя
 export interface User {

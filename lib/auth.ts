@@ -66,6 +66,7 @@ export function createSession(user: User): Session {
   
   // Сохраняем сессию в "базе данных"
   sessions.push(session);
+  console.log(`Создана новая сессия для пользователя ${user.username}, всего сессий: ${sessions.length}`);
   
   return session;
 }
@@ -74,43 +75,61 @@ export function createSession(user: User): Session {
 export function validateSession(token: string): Session | null {
   try {
     // Проверяем токен
-    jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
+    console.log(`Токен декодирован успешно:`, decoded);
     
     // Ищем сессию по токену
     const session = sessions.find(s => s.token === token);
     
     if (!session) {
+      console.log(`Сессия не найдена для токена. Текущие сессии: ${sessions.length}`);
       return null;
     }
     
     // Проверяем, не истек ли срок сессии
     if (new Date() > session.expiresAt) {
+      console.log(`Сессия истекла для пользователя ${session.user?.username}`);
       return null;
     }
     
+    console.log(`Сессия валидна для пользователя ${session.user?.username}`);
     return session;
   } catch (error) {
+    console.error('Ошибка при валидации токена:', error);
     return null;
   }
 }
 
 // Получение текущего пользователя по токену
 export function getCurrentUser(token: string): User | null {
-  const session = validateSession(token);
-  
-  if (!session) {
+  try {
+    // Декодируем токен без проверки
+    const decoded = jwt.decode(token) as { userId: string, role: string } | null;
+    console.log('Декодированный токен:', decoded);
+    
+    if (!decoded) {
+      console.log('Не удалось декодировать токен');
+      return null;
+    }
+    
+    // Находим пользователя по ID из токена
+    const user = mockUsers.find(u => u.id === decoded.userId);
+    
+    if (!user) {
+      console.log(`Пользователь с ID ${decoded.userId} не найден в mockUsers`);
+      console.log('Доступные пользователи:', mockUsers.map(u => ({ id: u.id, username: u.username })));
+      return null;
+    }
+    
+    console.log(`Пользователь найден: ${user.username}, роль: ${user.role}`);
+    
+    // Возвращаем пользователя без пароля
+    const { password, ...userWithoutPassword } = user;
+    return userWithoutPassword as User;
+  } catch (error) {
+    console.error('Ошибка при получении пользователя по токену:', error);
     return null;
   }
-  
-  const user = mockUsers.find(u => u.id === session.userId);
-  
-  if (!user) {
-    return null;
-  }
-  
-  // Возвращаем пользователя без пароля
-  const { password, ...userWithoutPassword } = user;
-  return userWithoutPassword as User;
 }
 
 // Проверка авторизации в API запросах

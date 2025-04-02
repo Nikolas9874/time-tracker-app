@@ -40,6 +40,7 @@ export function formatWeekday(date: Date | string): string {
 // Форматирование времени в формате HH:mm
 export function formatTime(date: Date | string | null): string {
   if (!date) return '--:--'
+  
   try {
     // Если дата уже является строкой времени в формате HH:mm, просто возвращаем ее
     if (typeof date === 'string' && /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(date)) {
@@ -89,7 +90,9 @@ export function formatTime(date: Date | string | null): string {
     }
     
     // Теперь dateObj точно валидный объект Date, используем format из date-fns
-    return format(dateObj, 'HH:mm')
+    const hours = dateObj.getHours().toString().padStart(2, '0');
+    const minutes = dateObj.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   } catch (error) {
     console.error('Ошибка форматирования времени:', error, 'для даты:', date)
     return '--:--'

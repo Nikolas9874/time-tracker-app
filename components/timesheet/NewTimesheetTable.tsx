@@ -132,13 +132,17 @@ export default function NewTimesheetTable({
   ) => {
     if (!timeValue) return
     
+    console.log(`Изменение времени для сотрудника ${employeeId}, поле ${field}, значение ${timeValue}`);
+    
     setEditableData(prev => {
       const prevData = prev[employeeId] || {}
       const prevTimeEntry = prevData.timeEntry || {}
       
       const dateObj = new Date(`${currentDate}T${timeValue}:00`)
       
-      return {
+      console.log('Создан объект даты:', dateObj);
+      
+      const result = {
         ...prev,
         [employeeId]: {
           ...prevData,
@@ -147,7 +151,11 @@ export default function NewTimesheetTable({
             [field]: dateObj
           }
         }
-      }
+      };
+      
+      console.log('Новое состояние для сотрудника:', result[employeeId]);
+      
+      return result;
     })
   }
 
@@ -164,13 +172,29 @@ export default function NewTimesheetTable({
 
   // Сохранение данных для сотрудника
   const handleSaveEmployee = async (employeeId: string) => {
-    if (!editableData[employeeId]) return
+    if (!editableData[employeeId]) {
+      console.error("Нет данных для сохранения (editableData[employeeId] отсутствует)");
+      return;
+    }
     
     setSavingState(prev => ({ ...prev, [employeeId]: true }))
     
     try {
       const workDay = workDays.find(wd => wd.employeeId === employeeId)
       const employeeData = editableData[employeeId]
+      
+      console.log('Сохранение данных для сотрудника:', employeeId);
+      console.log('Текущие данные из editableData:', JSON.stringify(employeeData));
+      console.log('Найдена существующая запись:', workDay ? JSON.stringify(workDay) : "Не найдена");
+      
+      // Проверка корректности данных в timeEntry
+      if (employeeData.dayType === 'WORK_DAY' && employeeData.timeEntry) {
+        console.log('Проверка timeEntry:', {
+          startTimeType: typeof employeeData.timeEntry.startTime,
+          startTimeIsValid: employeeData.timeEntry.startTime instanceof Date,
+          startTimeValue: employeeData.timeEntry.startTime ? employeeData.timeEntry.startTime.toString() : null
+        });
+      }
       
       // Сохраняем только необходимые поля
       const dataToSave: Record<string, any> = {
@@ -191,8 +215,26 @@ export default function NewTimesheetTable({
         }
       })
       
-      await onSave(dataToSave)
-      toast.success('Данные сохранены')
+      console.log('Данные для сохранения:', JSON.stringify(dataToSave));
+      
+      // Убедимся, что у нас есть необходимые данные для WORK_DAY
+      if (dataToSave.dayType === 'WORK_DAY' && (!dataToSave.timeEntry || 
+          !dataToSave.timeEntry.startTime || !dataToSave.timeEntry.endTime)) {
+        console.error('Неполные данные времени для рабочего дня:', dataToSave.timeEntry);
+        toast.error('Некорректные данные времени. Пожалуйста, укажите начало и конец рабочего дня.');
+        setSavingState(prev => ({ ...prev, [employeeId]: false }));
+        return;
+      }
+      
+      const result = await onSave(dataToSave)
+      
+      if (result) {
+        toast.success('Данные сохранены')
+        console.log('Данные успешно сохранены');
+      } else {
+        console.error('Ошибка: onSave вернул false');
+        toast.error('Не удалось сохранить данные')
+      }
     } catch (error) {
       console.error('Ошибка при сохранении:', error)
       toast.error('Не удалось сохранить данные')

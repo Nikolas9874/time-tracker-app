@@ -51,33 +51,64 @@ export default function TimesheetPage() {
         throw new Error('Не все обязательные поля заполнены')
       }
 
+      console.log('saveWorkDay: Получены данные для сохранения:', {
+        id: workDay.id,
+        employeeId: workDay.employeeId,
+        dayType: workDay.dayType,
+        hasTimeEntry: !!workDay.timeEntry,
+        timeEntryType: workDay.timeEntry ? typeof workDay.timeEntry : null,
+        timeEntryDetails: workDay.timeEntry ? JSON.stringify(workDay.timeEntry).substring(0, 100) : null
+      });
+
       let response
+      let requestBody
       
       // Если есть id, обновляем существующую запись, иначе создаем новую
       if (workDay.id) {
+        console.log('saveWorkDay: Обновляем существующую запись:', workDay.id);
+        requestBody = JSON.stringify(workDay);
+        console.log('saveWorkDay: Отправляемые данные (PUT):', requestBody.substring(0, 300));
+        
         response = await fetch('/api/workdays', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(workDay)
+          body: requestBody
         })
       } else {
+        console.log('saveWorkDay: Создаем новую запись');
+        const newWorkDay = {
+          ...workDay,
+          date: currentDate // Используем текущую выбранную дату
+        };
+        requestBody = JSON.stringify(newWorkDay);
+        console.log('saveWorkDay: Отправляемые данные (POST):', requestBody.substring(0, 300));
+        
         response = await fetch('/api/workdays', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...workDay,
-            date: currentDate // Используем текущую выбранную дату
-          })
+          body: requestBody
         })
       }
 
+      // Проверяем HTTP статус
+      console.log('saveWorkDay: Получен HTTP статус:', response.status);
+      
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('saveWorkDay: Ошибка от API:', errorData);
         throw new Error(errorData.error || 'Ошибка при сохранении данных')
       }
 
       // Получаем обновленную или созданную запись
       const updatedWorkDay = await response.json()
+      console.log('saveWorkDay: Получен ответ от API:', {
+        id: updatedWorkDay.id,
+        employeeId: updatedWorkDay.employeeId,
+        dayType: updatedWorkDay.dayType,
+        hasTimeEntry: !!updatedWorkDay.timeEntry,
+        timeEntryType: updatedWorkDay.timeEntry ? typeof updatedWorkDay.timeEntry : null,
+        timeEntryDetails: updatedWorkDay.timeEntry ? JSON.stringify(updatedWorkDay.timeEntry).substring(0, 100) : null
+      });
       
       // Обновляем состояние, заменяя запись с тем же ID, если она существует
       // или добавляя новую, если записи с таким ID еще нет
@@ -88,9 +119,11 @@ export default function TimesheetPage() {
           // Заменяем существующую запись
           const newWorkDays = [...prevWorkDays]
           newWorkDays[workDayIndex] = updatedWorkDay
+          console.log('saveWorkDay: Обновили существующую запись в состоянии, индекс:', workDayIndex);
           return newWorkDays
         } else {
           // Добавляем новую запись
+          console.log('saveWorkDay: Добавляем новую запись в состояние');
           return [...prevWorkDays, updatedWorkDay]
         }
       })
