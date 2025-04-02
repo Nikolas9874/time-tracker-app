@@ -281,9 +281,7 @@ export async function PUT(request: NextRequest) {
     console.log('Получен запрос на обновление рабочего дня:', {
       id: data.id,
       employeeId: data.employeeId,
-      dayType: data.dayType,
-      timeEntryType: data.timeEntry ? typeof data.timeEntry : null,
-      timeEntryDetails: data.timeEntry ? JSON.stringify(data.timeEntry).substring(0, 100) : null
+      dayType: data.dayType
     })
     
     // Проверка ID
@@ -309,67 +307,14 @@ export async function PUT(request: NextRequest) {
         )
       }
 
-      console.log('Найдена существующая запись:', {
-        id: existingWorkDay.id,
-        employeeId: existingWorkDay.employeeId,
-        dayType: existingWorkDay.dayType,
-        timeEntry: existingWorkDay.timeEntry ? existingWorkDay.timeEntry.substring(0, 100) : null
-      })
-
       // Подготавливаем данные для обновления
       // Удаляем поля, которые не должны быть в запросе обновления
       const { employee, employeeId, createdAt, updatedAt, ...updateData } = data
       
       // Проверяем, является ли timeEntry уже строкой JSON
       let timeEntryData = updateData.timeEntry
-      if (timeEntryData) {
-        try {
-          // Если timeEntry - это объект, сериализуем его
-          if (typeof timeEntryData === 'object') {
-            timeEntryData = JSON.stringify(timeEntryData)
-            console.log('timeEntry преобразован из объекта в JSON строку:', 
-                    typeof timeEntryData, timeEntryData.substring(0, 100))
-          } 
-          // Если это строка, проверяем, не является ли она уже сериализованным JSON
-          else if (typeof timeEntryData === 'string') {
-            try {
-              // Пробуем распарсить - если успешно, значит это валидный JSON
-              const parsed = JSON.parse(timeEntryData)
-              console.log('timeEntry успешно распарсен из строки в объект:', 
-                     typeof parsed, JSON.stringify(parsed).substring(0, 100))
-              // Если parsed - строка, возможно это двойная сериализация
-              if (typeof parsed === 'string') {
-                try {
-                  // Пробуем распарсить еще раз
-                  JSON.parse(parsed)
-                  console.log('Обнаружена двойная сериализация timeEntry')
-                  // Если дошли сюда без ошибок, значит это была двойная сериализация
-                  // Оставляем как есть, т.к. первый JSON.parse уже вернул правильный формат
-                  timeEntryData = parsed
-                } catch (e) {
-                  // Если не удалось распарсить второй раз, то первый парсинг был корректным
-                  timeEntryData = JSON.stringify(parsed)
-                  console.log('Первый парсинг был корректным, повторно сериализуем объект:', 
-                          typeof timeEntryData, timeEntryData.substring(0, 100))
-                }
-              } else {
-                // Если parsed не строка, то первоначальная строка была корректным JSON
-                // Просто обеспечиваем, что это валидный JSON-формат
-                timeEntryData = JSON.stringify(parsed)
-                console.log('timeEntry пересериализован для обеспечения валидного формата:', 
-                      typeof timeEntryData, timeEntryData.substring(0, 100))
-              }
-            } catch (e) {
-              // Если не удалось распарсить, то это не JSON - сериализуем
-              timeEntryData = JSON.stringify(timeEntryData)
-              console.log('timeEntry не является JSON строкой, сериализуем его:', 
-                     typeof timeEntryData, timeEntryData.substring(0, 100))
-            }
-          }
-        } catch (error) {
-          console.error('Ошибка обработки timeEntry:', error)
-          timeEntryData = null
-        }
+      if (timeEntryData && typeof timeEntryData === 'object') {
+        timeEntryData = JSON.stringify(timeEntryData)
       }
       
       // Форматируем данные перед обновлением
@@ -380,13 +325,6 @@ export async function PUT(request: NextRequest) {
         tasks: updateData.tasks ? (typeof updateData.tasks === 'string' ? updateData.tasks : JSON.stringify(updateData.tasks)) : undefined,
         connections: updateData.connections ? (typeof updateData.connections === 'string' ? updateData.connections : JSON.stringify(updateData.connections)) : undefined
       }
-
-      console.log('Данные, отправляемые в БД для обновления:', {
-        id: data.id,
-        dayType: formattedData.dayType,
-        timeEntry: typeof formattedData.timeEntry === 'string' ? 'JSON строка' : formattedData.timeEntry,
-        comment: formattedData.comment
-      })
 
       // Обновляем запись
       const updatedWorkDay = await db.workDay.update({
@@ -399,8 +337,7 @@ export async function PUT(request: NextRequest) {
 
       console.log('Запись успешно обновлена:', {
         id: updatedWorkDay.id,
-        dayType: updatedWorkDay.dayType,
-        timeEntry: updatedWorkDay.timeEntry ? updatedWorkDay.timeEntry.substring(0, 100) : null
+        dayType: updatedWorkDay.dayType
       })
 
       // Форматируем ответ

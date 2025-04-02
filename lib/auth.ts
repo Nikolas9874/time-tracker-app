@@ -16,7 +16,6 @@ export async function authenticateUser(username: string, password: string): Prom
   const user = mockUsers.find(u => u.username === username);
   
   if (!user) {
-    console.log(`Пользователь с именем ${username} не найден`);
     return null;
   }
   
@@ -24,11 +23,8 @@ export async function authenticateUser(username: string, password: string): Prom
   const passwordMatch = user.password === password;
   
   if (!passwordMatch) {
-    console.log(`Неверный пароль для пользователя ${username}`);
     return null;
   }
-  
-  console.log(`Успешная аутентификация пользователя ${username}`);
   
   // Возвращаем пользователя без пароля
   const { password: _, ...userWithoutPassword } = user;
@@ -76,26 +72,21 @@ export function validateSession(token: string): Session | null {
   try {
     // Проверяем токен
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log(`Токен декодирован успешно:`, decoded);
     
     // Ищем сессию по токену
     const session = sessions.find(s => s.token === token);
     
     if (!session) {
-      console.log(`Сессия не найдена для токена. Текущие сессии: ${sessions.length}`);
       return null;
     }
     
     // Проверяем, не истек ли срок сессии
     if (new Date() > session.expiresAt) {
-      console.log(`Сессия истекла для пользователя ${session.user?.username}`);
       return null;
     }
     
-    console.log(`Сессия валидна для пользователя ${session.user?.username}`);
     return session;
   } catch (error) {
-    console.error('Ошибка при валидации токена:', error);
     return null;
   }
 }
@@ -105,10 +96,8 @@ export function getCurrentUser(token: string): User | null {
   try {
     // Декодируем токен без проверки
     const decoded = jwt.decode(token) as { userId: string, role: string } | null;
-    console.log('Декодированный токен:', decoded);
     
     if (!decoded) {
-      console.log('Не удалось декодировать токен');
       return null;
     }
     
@@ -116,18 +105,13 @@ export function getCurrentUser(token: string): User | null {
     const user = mockUsers.find(u => u.id === decoded.userId);
     
     if (!user) {
-      console.log(`Пользователь с ID ${decoded.userId} не найден в mockUsers`);
-      console.log('Доступные пользователи:', mockUsers.map(u => ({ id: u.id, username: u.username })));
       return null;
     }
-    
-    console.log(`Пользователь найден: ${user.username}, роль: ${user.role}`);
     
     // Возвращаем пользователя без пароля
     const { password, ...userWithoutPassword } = user;
     return userWithoutPassword as User;
   } catch (error) {
-    console.error('Ошибка при получении пользователя по токену:', error);
     return null;
   }
 }
@@ -168,7 +152,6 @@ export async function verifyAuth(
       if (options?.requireAuth === false) {
         return { success: true };
       }
-      console.log('Токен не найден в запросе');
       return { success: false };
     }
     
@@ -180,14 +163,11 @@ export async function verifyAuth(
       if (options?.requireAuth === false) {
         return { success: true };
       }
-      console.log('Пользователь не найден по токену');
       return { success: false };
     }
     
-    console.log(`Успешная аутентификация пользователя ${user.username} с ролью ${user.role}`);
     return { success: true, user };
   } catch (error) {
-    console.error('Auth verification error:', error);
     return { success: false };
   }
 }
@@ -232,7 +212,6 @@ export async function changeUserPassword(userId: string, currentPassword: string
   const userIndex = mockUsers.findIndex(u => u.id === userId);
   
   if (userIndex === -1) {
-    console.log(`Пользователь с ID ${userId} не найден`);
     return false;
   }
   
@@ -240,7 +219,6 @@ export async function changeUserPassword(userId: string, currentPassword: string
   
   // Проверить текущий пароль 
   if (user.password !== currentPassword) {
-    console.log(`Неверный текущий пароль для пользователя ${user.username}`);
     return false;
   }
   
@@ -251,6 +229,5 @@ export async function changeUserPassword(userId: string, currentPassword: string
     updatedAt: new Date()
   };
   
-  console.log(`Пароль успешно изменен для пользователя ${user.username}`);
   return true;
 } 

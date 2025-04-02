@@ -59,7 +59,6 @@ const CommitHistory: React.FC<{ onRollback: (hash: string) => void }> = ({ onRol
         setError(data.error || 'Не удалось получить историю коммитов');
       }
     } catch (err: any) {
-      console.error('Ошибка при загрузке истории коммитов:', err);
       setError(err.message || 'Не удалось загрузить историю коммитов');
     } finally {
       setIsLoading(false);
@@ -264,7 +263,6 @@ const SettingsPage = () => {
       
       setBackupInfo(`Резервная копия создана: ${new Date().toLocaleString()}`);
     } catch (err) {
-      console.error('Ошибка при создании резервной копии:', err);
       setFormError('Не удалось создать резервную копию данных');
     } finally {
       setIsBackupLoading(false);
@@ -321,7 +319,6 @@ const SettingsPage = () => {
           
           setSuccessMessage(`Данные успешно восстановлены из резервной копии от ${new Date(backupData.timestamp).toLocaleString()}`);
         } catch (err: any) {
-          console.error('Ошибка при обработке файла резервной копии:', err);
           setFormError(err.message || 'Не удалось восстановить данные из резервной копии');
         } finally {
           setIsDataLoading(false);
@@ -335,7 +332,6 @@ const SettingsPage = () => {
       
       reader.readAsText(file);
     } catch (err) {
-      console.error('Ошибка при восстановлении данных:', err);
       setFormError('Не удалось загрузить файл резервной копии');
       setIsDataLoading(false);
     }
@@ -360,7 +356,6 @@ const SettingsPage = () => {
       const result = await response.json();
       setSuccessMessage(`Данные успешно обновлены. Добавлено ${result.added || 0} записей, обновлено ${result.updated || 0} записей.`);
     } catch (err: any) {
-      console.error('Ошибка при обновлении данных:', err);
       setFormError(err.message || 'Не удалось обновить данные');
     } finally {
       setIsDataLoading(false);
@@ -411,7 +406,6 @@ const SettingsPage = () => {
         setFormError(result.error || 'Не удалось откатить приложение');
       }
     } catch (err: any) {
-      console.error('Ошибка при откате приложения:', err);
       setFormError(err.message || 'Не удалось откатить приложение');
     } finally {
       setIsDataLoading(false);
@@ -437,12 +431,12 @@ const SettingsPage = () => {
       });
       
       if (!response.ok) {
-        console.error(`Ошибка при обновлении истории коммитов: ${response.status}`);
+        // Ошибка обрабатывается в компоненте CommitHistory
       }
       
       // Результат обрабатывается в компоненте CommitHistory
     } catch (error) {
-      console.error('Ошибка при обновлении истории коммитов:', error);
+      // Ошибка обрабатывается в компоненте CommitHistory
     }
   };
   

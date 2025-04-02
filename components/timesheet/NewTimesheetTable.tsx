@@ -132,15 +132,11 @@ export default function NewTimesheetTable({
   ) => {
     if (!timeValue) return
     
-    console.log(`Изменение времени для сотрудника ${employeeId}, поле ${field}, значение ${timeValue}`);
-    
     setEditableData(prev => {
       const prevData = prev[employeeId] || {}
       const prevTimeEntry = prevData.timeEntry || {}
       
       const dateObj = new Date(`${currentDate}T${timeValue}:00`)
-      
-      console.log('Создан объект даты:', dateObj);
       
       const result = {
         ...prev,
@@ -152,8 +148,6 @@ export default function NewTimesheetTable({
           }
         }
       };
-      
-      console.log('Новое состояние для сотрудника:', result[employeeId]);
       
       return result;
     })
@@ -183,19 +177,6 @@ export default function NewTimesheetTable({
       const workDay = workDays.find(wd => wd.employeeId === employeeId)
       const employeeData = editableData[employeeId]
       
-      console.log('Сохранение данных для сотрудника:', employeeId);
-      console.log('Текущие данные из editableData:', JSON.stringify(employeeData));
-      console.log('Найдена существующая запись:', workDay ? JSON.stringify(workDay) : "Не найдена");
-      
-      // Проверка корректности данных в timeEntry
-      if (employeeData.dayType === 'WORK_DAY' && employeeData.timeEntry) {
-        console.log('Проверка timeEntry:', {
-          startTimeType: typeof employeeData.timeEntry.startTime,
-          startTimeIsValid: employeeData.timeEntry.startTime instanceof Date,
-          startTimeValue: employeeData.timeEntry.startTime ? employeeData.timeEntry.startTime.toString() : null
-        });
-      }
-      
       // Сохраняем только необходимые поля
       const dataToSave: Record<string, any> = {
         id: workDay?.id, // Может быть undefined для новой записи
@@ -215,8 +196,6 @@ export default function NewTimesheetTable({
         }
       })
       
-      console.log('Данные для сохранения:', JSON.stringify(dataToSave));
-      
       // Убедимся, что у нас есть необходимые данные для WORK_DAY
       if (dataToSave.dayType === 'WORK_DAY' && (!dataToSave.timeEntry || 
           !dataToSave.timeEntry.startTime || !dataToSave.timeEntry.endTime)) {
@@ -230,7 +209,6 @@ export default function NewTimesheetTable({
       
       if (result) {
         toast.success('Данные сохранены')
-        console.log('Данные успешно сохранены');
       } else {
         console.error('Ошибка: onSave вернул false');
         toast.error('Не удалось сохранить данные')
