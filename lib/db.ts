@@ -1,11 +1,11 @@
 import { PrismaClient } from '@prisma/client'
 
-declare global {
-  var db: PrismaClient | undefined
-}
+// Подход рекомендованный Prisma для использования с Next.js 
+// для предотвращения создания множества подключений при разработке
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-export const db = global.db || new PrismaClient()
+export const db = globalForPrisma.prisma || new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') {
-  global.db = db
+  globalForPrisma.prisma = db
 } 

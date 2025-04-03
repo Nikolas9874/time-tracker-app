@@ -105,7 +105,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ user, onClose, onSave }) 
             >
               <option value="ADMIN">Администратор</option>
               <option value="MANAGER">Менеджер</option>
-              <option value="USER">Пользователь</option>
+              <option value="OPERATOR">Оператор</option>
             </select>
           </div>
           
@@ -215,17 +215,17 @@ const UsersManagementPage = () => {
   };
   
   // Роли пользователей для отображения
-  const roleLabels: Record<UserRole, string> = {
+  const roleLabels: Record<string, string> = {
     'ADMIN': 'Администратор',
     'MANAGER': 'Менеджер',
-    'USER': 'Пользователь'
+    'OPERATOR': 'Оператор'
   };
   
   // Цвета для ролей
-  const roleColors: Record<UserRole, string> = {
+  const roleColors: Record<string, string> = {
     'ADMIN': 'bg-red-100 text-red-800',
     'MANAGER': 'bg-blue-100 text-blue-800',
-    'USER': 'bg-green-100 text-green-800'
+    'OPERATOR': 'bg-green-100 text-green-800'
   };
   
   // Если загрузка или пользователь не админ, возвращаем заглушку

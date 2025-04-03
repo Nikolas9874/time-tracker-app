@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { Employee, WorkDay } from '@prisma/client'
 
 interface WorkDayWithJson {
   id: string
   employeeId: string
-  employee: any
+  employee: Employee
   date: Date
   dayType: string
   timeEntry: string | null
@@ -13,6 +14,14 @@ interface WorkDayWithJson {
   comment: string | null
   createdAt: Date
   updatedAt: Date
+}
+
+interface TimeEntry {
+  startTime?: string
+  endTime?: string
+  lunchStartTime?: string
+  lunchEndTime?: string
+  [key: string]: any
 }
 
 // GET /api/workdays - получение списка рабочих дней с фильтрацией
@@ -34,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Создаем объект с условиями запроса
-    let where: any = {}
+    const where: Record<string, any> = {}
 
     if (date) {
       // Для табеля - только одна дата
@@ -76,7 +85,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Форматируем timeEntry, tasks и connections (преобразуем JSON строки в объекты)
-    const formattedWorkDays = workDays.map((day: any) => {
+    const formattedWorkDays = workDays.map((day: WorkDay & { employee: Employee }) => {
       try {
         // Обработка timeEntry с защитой от ошибок
         let timeEntry = null;
@@ -94,8 +103,8 @@ export async function GET(request: NextRequest) {
                 timeEntry = parsed;
               }
             }
-          } catch (e) {
-            console.error('Ошибка парсинга timeEntry:', e);
+          } catch {
+            console.error('Ошибка парсинга timeEntry');
             timeEntry = null;
           }
         }
@@ -108,8 +117,8 @@ export async function GET(request: NextRequest) {
             if (typeof tasks === 'string') {
               tasks = JSON.parse(tasks);
             }
-          } catch (e) {
-            console.error('Ошибка парсинга tasks:', e);
+          } catch {
+            console.error('Ошибка парсинга tasks');
             tasks = [];
           }
         }
@@ -122,8 +131,8 @@ export async function GET(request: NextRequest) {
             if (typeof connections === 'string') {
               connections = JSON.parse(connections);
             }
-  } catch (e) {
-            console.error('Ошибка парсинга connections:', e);
+          } catch {
+            console.error('Ошибка парсинга connections');
             connections = [];
           }
         }
@@ -183,7 +192,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Удаляем лишние поля
+    // Удаляем лишние поля, которые не нужны при создании
     const { id, employee, createdAt, updatedAt, ...createData } = data
 
     // Проверяем, является ли timeEntry уже строкой JSON
@@ -207,7 +216,7 @@ export async function POST(request: NextRequest) {
                 // Если дошли сюда без ошибок, значит это была двойная сериализация
                 // Оставляем как есть, т.к. первый JSON.parse уже вернул правильный формат
                 timeEntryData = parsed
-              } catch (e) {
+              } catch {
                 // Если не удалось распарсить второй раз, то первый парсинг был корректным
                 timeEntryData = JSON.stringify(parsed)
               }
@@ -216,7 +225,7 @@ export async function POST(request: NextRequest) {
               // Просто обеспечиваем, что это валидный JSON-формат
               timeEntryData = JSON.stringify(parsed)
             }
-          } catch (e) {
+          } catch {
             // Если не удалось распарсить, то это не JSON - сериализуем
             timeEntryData = JSON.stringify(timeEntryData)
           }
@@ -253,17 +262,13 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json(result, { status: 201 })
-  } catch (error: any) {
+  } catch (error) {
     // Расширенная обработка ошибок
     console.error('Ошибка при создании рабочего дня:', error)
     let errorMessage = 'Произошла ошибка при создании рабочего дня'
     
-    if (error.message) {
+    if (error instanceof Error && error.message) {
       errorMessage += `: ${error.message}`
-    }
-    
-    if (error.code) {
-      errorMessage += ` (код: ${error.code})`
     }
     
     return NextResponse.json(
@@ -307,7 +312,6 @@ export async function PUT(request: NextRequest) {
         )
       }
 
-      // Подготавливаем данные для обновления
       // Удаляем поля, которые не должны быть в запросе обновления
       const { employee, employeeId, createdAt, updatedAt, ...updateData } = data
       
@@ -353,17 +357,13 @@ export async function PUT(request: NextRequest) {
       console.error('Ошибка при работе с базой данных:', dbError)
       throw dbError
     }
-  } catch (error: any) {
+  } catch (error) {
     // Расширенная обработка ошибок
     console.error('Ошибка при обновлении рабочего дня:', error)
     let errorMessage = 'Произошла ошибка при обновлении рабочего дня'
     
-    if (error.message) {
+    if (error instanceof Error && error.message) {
       errorMessage += `: ${error.message}`
-    }
-    
-    if (error.code) {
-      errorMessage += ` (код: ${error.code})`
     }
     
     return NextResponse.json(

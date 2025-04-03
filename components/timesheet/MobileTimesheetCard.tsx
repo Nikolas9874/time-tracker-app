@@ -3,11 +3,11 @@
 import React, { useState } from 'react';
 import { formatTime } from '@/lib/utils';
 import { DayType, WorkDay, TimeEntry } from '@/types/workday';
-import Button from '@/components/ui/Button';
+import { WorkDayCreateRequest, WorkDayUpdateRequest } from '@/types/api';
 
 interface MobileTimesheetCardProps {
   workDay: WorkDay;
-  onSave: (workDay: any) => Promise<boolean>;
+  onSave: (workDay: WorkDayCreateRequest | WorkDayUpdateRequest) => Promise<boolean>;
   onDelete: (workDayId: string) => Promise<boolean>;
 }
 

@@ -1,14 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { formatDateISO } from '@/lib/utils'
 import DateNavigation from '@/components/timesheet/DateNavigation'
-import NewTimesheetTable from '@/components/timesheet/NewTimesheetTable'
+import TimesheetTable from '@/components/timesheet/TimesheetTable'
 import TimesheetStats from '@/components/timesheet/TimesheetStats'
 import TimesheetChart from '@/components/timesheet/TimesheetChart'
 import ExportButton from '@/components/timesheet/ExportButton'
 import { toast } from 'react-hot-toast'
 import { WorkDay } from '@/types/workday'
+import { WorkDayCreateRequest, WorkDayUpdateRequest } from '@/types/api'
 
 export default function TimesheetPage() {
   const [currentDate, setCurrentDate] = useState(formatDateISO(new Date()))
@@ -30,10 +31,11 @@ export default function TimesheetPage() {
       
       const data = await response.json()
       setWorkDays(data)
-    } catch (err: any) {
-      console.error('Ошибка загрузки рабочих дней:', err.message)
-      setError(err.message || 'Произошла ошибка при загрузке данных')
-      toast.error(err.message || 'Произошла ошибка при загрузке данных')
+    } catch (err) {
+      console.error('Ошибка загрузки рабочих дней:', err instanceof Error ? err.message : String(err))
+      const errorMessage = err instanceof Error ? err.message : 'Произошла ошибка при загрузке данных'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -44,15 +46,15 @@ export default function TimesheetPage() {
     reloadWorkDays(currentDate)
   }, [currentDate])
 
-  const saveWorkDay = async (workDay: any) => {
+  const saveWorkDay = async (workDay: WorkDayCreateRequest | WorkDayUpdateRequest) => {
     try {
       // Проверяем наличие минимально необходимых полей
-      if (!workDay.employeeId || !workDay.date || !workDay.dayType) {
+      if (!('employeeId' in workDay) || !workDay.employeeId || !('date' in workDay) || !workDay.date || !('dayType' in workDay) || !workDay.dayType) {
         throw new Error('Не все обязательные поля заполнены')
       }
 
       console.log('saveWorkDay: Получены данные для сохранения:', {
-        id: workDay.id,
+        id: 'id' in workDay ? workDay.id : undefined,
         employeeId: workDay.employeeId,
         dayType: workDay.dayType,
         hasTimeEntry: !!workDay.timeEntry,
@@ -60,11 +62,11 @@ export default function TimesheetPage() {
         timeEntryDetails: workDay.timeEntry ? JSON.stringify(workDay.timeEntry).substring(0, 100) : null
       });
 
-      let response
-      let requestBody
+      let response;
+      let requestBody;
       
       // Если есть id, обновляем существующую запись, иначе создаем новую
-      if (workDay.id) {
+      if ('id' in workDay && workDay.id) {
         console.log('saveWorkDay: Обновляем существующую запись:', workDay.id);
         requestBody = JSON.stringify(workDay);
         console.log('saveWorkDay: Отправляемые данные (PUT):', requestBody.substring(0, 300));
@@ -100,7 +102,7 @@ export default function TimesheetPage() {
       }
 
       // Получаем обновленную или созданную запись
-      const updatedWorkDay = await response.json()
+      const updatedWorkDay = await response.json() as WorkDay;
       console.log('saveWorkDay: Получен ответ от API:', {
         id: updatedWorkDay.id,
         employeeId: updatedWorkDay.employeeId,
@@ -130,9 +132,9 @@ export default function TimesheetPage() {
 
       toast.success('Данные успешно сохранены')
       return true
-    } catch (err: any) {
-      console.error('Ошибка сохранения рабочего дня:', err.message)
-      toast.error(err.message || 'Произошла ошибка при сохранении данных')
+    } catch (err) {
+      console.error('Ошибка сохранения рабочего дня:', err instanceof Error ? err.message : String(err))
+      toast.error(err instanceof Error ? err.message : 'Произошла ошибка при сохранении данных')
       return false
     }
   }
@@ -152,9 +154,9 @@ export default function TimesheetPage() {
       setWorkDays(prevWorkDays => prevWorkDays.filter(wd => wd.id !== workDayId))
       toast.success('Запись успешно удалена')
       return true
-    } catch (err: any) {
-      console.error('Ошибка удаления рабочего дня:', err.message)
-      toast.error(err.message || 'Произошла ошибка при удалении данных')
+    } catch (err) {
+      console.error('Ошибка удаления рабочего дня:', err instanceof Error ? err.message : String(err))
+      toast.error(err instanceof Error ? err.message : 'Произошла ошибка при удалении данных')
       return false
     }
   }
@@ -197,21 +199,13 @@ export default function TimesheetPage() {
       )}
       
       {/* Статистика */}
-      <TimesheetStats
-        workDays={workDays}
-        currentDate={currentDate}
-      />
-      
-      {/* Графики */}
-      {showCharts && (
-        <TimesheetChart
-          workDays={workDays}
-          currentDate={currentDate}
-        />
-      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <TimesheetStats workDays={workDays} />
+        <TimesheetChart workDays={workDays} />
+      </div>
       
       {/* Таблица */}
-      <NewTimesheetTable 
+      <TimesheetTable 
         workDays={workDays}
         currentDate={currentDate}
         isLoading={isLoading}

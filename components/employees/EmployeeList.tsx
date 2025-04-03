@@ -47,7 +47,7 @@ const EmployeeList = ({ employees, onEdit, onDelete }: EmployeeListProps) => {
                   </Button>
                   <Button
                     onClick={() => onDelete(employee)}
-                    variant="danger"
+                    variant="destructive"
                     size="sm"
                     aria-label={`Удалить сотрудника ${employee.name}`}
                     tabIndex={0}
