@@ -2,3 +2,5 @@ node_modules
 .next
 .env
 *.log
+commits-history.json
+prisma/dev.db
