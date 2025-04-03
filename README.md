@@ -1,127 +1,151 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Time Tracker App
 
-## Getting Started
-Основные команды настройки сервера
-Обновление системы:
-  sudo apt update
-  sudo apt upgrade -y
-Установка Node.js и npm:
-  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-  sudo apt install -y nodejs
-Проверка версий:
-  node -v
-  npm -v
-Установка Git:
-  sudo apt install git -y
-Клонирование и настройка проекта
-Создание директории и клонирование:
-  mkdir -p /var/www
-  cd /var/www
-  git clone https://github.com/Nikolas9874/time-tracker-app.git
-  cd time-tracker-app
-Установка зависимостей:
-  npm install
-Исправление ошибки с heroicons:
-  npm install @heroicons/react@2.2.0
-Создание файла .env:
-  cat > .env << 'EOF'
-  # Prisma configuration
-  DATABASE_URL="file:./dev.db"
-  # Дополнительные настройки, если потребуются
-  EOF
-Сборка и запуск приложения
-Сборка приложения:
-  npm run build
-Установка и настройка PM2:
-  sudo npm install -g pm2
-  pm2 start npm --name "time-tracker" -- start
-  pm2 startup
-  pm2 save
-Настройка Nginx для проксирования
-Установка Nginx:
-  sudo apt install nginx -y
-Создание конфигурации сайта:
-  sudo cat > /etc/nginx/sites-available/time-tracker << 'EOF'
-  server {
-      listen 80;
-      server_name ваш_домен_или_IP;
+Приложение для учета рабочего времени сотрудников. Позволяет вести табель, отслеживать рабочие часы, отпуска, больничные и другие типы рабочих дней.
 
-      location / {
-          proxy_pass http://localhost:3000;
-          proxy_http_version 1.1;
-          proxy_set_header Upgrade $http_upgrade;
-          proxy_set_header Connection 'upgrade';
-          proxy_set_header Host $host;
-          proxy_cache_bypass $http_upgrade;
-      }
-  }
-  EOF
-Активация конфигурации и перезапуск сервера:
-  sudo ln -s /etc/nginx/sites-available/time-tracker /etc/nginx/sites-enabled/
-  sudo nginx -t
-  sudo systemctl restart nginx
-SSL-сертификат (опционально)
-Установка Let's Encrypt:
-  sudo apt install certbot python3-certbot-nginx -y
-  sudo certbot --nginx -d ваш_домен
-Резервное копирование данных
-Создание скрипта резервного копирования:
-  sudo cat > /etc/cron.daily/time-tracker-backup << 'EOF'
-  #!/bin/bash
-  DATE=$(date +"%Y-%m-%d")
-  BACKUP_DIR="/var/backups/time-tracker"
-  mkdir -p $BACKUP_DIR
-  cp /var/www/time-tracker-app/workdays_data.json $BACKUP_DIR/workdays_data-$DATE.json
-  cp /var/www/time-tracker-app/employees_data.json $BACKUP_DIR/employees_data-$DATE.json
-  cp /var/www/time-tracker-app/prisma/dev.db $BACKUP_DIR/dev-$DATE.db
-  EOF
-  sudo chmod +x /etc/cron.daily/time-tracker-backup
-Команды для обслуживания системы
-Перезапуск приложения:
-  pm2 restart time-tracker
-Просмотр логов:
-  pm2 logs time-tracker
-Мониторинг процессов:
-  pm2 monit
-Обновление приложения:
-  cd /var/www/time-tracker-app
-  git pull
-  npm install
-  npm run build
-  pm2 restart time-tracker
+## Функциональность
 
-Проверка работы приложения:
-  curl http://localhost:3000
+- Авторизация пользователей с разными ролями (администратор, руководитель, сотрудник)
+- Учет рабочего времени сотрудников
+- Различные типы дней: рабочий день, отпуск, больничный, выходной и др.
+- Статистика и графики по рабочему времени
+- Экспорт данных
+- Резервное копирование и восстановление данных
+- Обновление приложения
 
-First, run the development server:
+## Технологический стек
 
-```bash
+- Next.js 15.2.4
+- React 19
+- TypeScript
+- Prisma с SQLite
+- TailwindCSS
+- Chart.js для визуализации данных
+- Jest и Testing Library для тестирования
+
+## Установка и запуск
+
+### Требования
+
+- Node.js 20+
+- npm 10+
+
+### Установка
+
+1. Клонируйте репозиторий:
+   ```
+   git clone https://github.com/username/time-tracker-app.git
+   cd time-tracker-app
+   ```
+
+2. Установите зависимости:
+   ```
+   npm install
+   ```
+
+3. Настройте базу данных:
+   ```
+   npx prisma generate
+   npx prisma migrate dev
+   ```
+
+4. Заполните базу данных тестовыми данными (опционально):
+   ```
+   npm run seed
+   ```
+
+### Запуск
+
+Для режима разработки:
+```
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Для сборки и запуска в production режиме:
+```
+npm run build
+npm run start
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Структура проекта
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+/app                # Страницы и API-эндпоинты
+  /admin            # Страницы администратора
+  /api              # API-эндпоинты
+  /login            # Страница входа
+  /timesheet        # Страница табеля
+  /employees        # Страница сотрудников
+  /reports          # Страница отчетов
+  /settings         # Страница настроек
+/components         # React-компоненты
+  /timesheet        # Компоненты для табеля
+  /employees        # Компоненты для управления сотрудниками
+  /reports          # Компоненты для отчетов
+  /ui               # UI-компоненты (кнопки, селекты и т.д.)
+/lib                # Утилиты, хелперы, контексты
+/prisma             # Модели и миграции Prisma
+/public             # Статические файлы
+/types              # TypeScript типы
+/__tests__          # Тесты
+```
 
-## Learn More
+## API
 
-To learn more about Next.js, take a look at the following resources:
+### Аутентификация
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `POST /api/auth` - Вход в систему
+- `GET /api/auth/me` - Получение информации о текущем пользователе
+- `POST /api/auth/register` - Регистрация нового пользователя
+- `POST /api/auth/change-password` - Изменение пароля
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Сотрудники
 
-## Deploy on Vercel
+- `GET /api/employees` - Получение списка сотрудников
+- `GET /api/employees/:id` - Получение информации о сотруднике
+- `POST /api/employees` - Создание нового сотрудника
+- `PUT /api/employees/:id` - Обновление информации о сотруднике
+- `DELETE /api/employees/:id` - Удаление сотрудника
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Рабочие дни
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `GET /api/workdays` - Получение списка рабочих дней
+- `GET /api/workdays?date=YYYY-MM-DD` - Получение рабочих дней на конкретную дату
+- `POST /api/workdays` - Создание нового рабочего дня
+- `PUT /api/workdays` - Обновление рабочего дня
+- `DELETE /api/workdays?id=:id` - Удаление рабочего дня
+
+### Резервное копирование
+
+- `GET /api/backup` - Создание резервной копии данных
+- `POST /api/backup` - Восстановление из резервной копии
+
+### Обновление
+
+- `GET /api/update` - Проверка наличия обновлений
+- `POST /api/update` - Установка обновления
+- `POST /api/update/rollback` - Откат обновления
+
+### Системная информация
+
+- `GET /api/health` - Проверка состояния приложения
+
+## Тестирование
+
+Для запуска тестов:
+```
+npm run test
+```
+
+Для запуска тестов в режиме отслеживания изменений:
+```
+npm run test:watch
+```
+
+Для проверки покрытия тестами:
+```
+npm run test:coverage
+```
+
+## Лицензия
+
+[MIT](LICENSE)
