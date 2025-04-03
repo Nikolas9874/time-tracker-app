@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "PORT=3001 next dev",
     "build": "next build",
-    "start": "node .next/standalone/server.js",
-    "start:legacy": "next start",
+    "start": "PORT=3001 node .next/standalone/server.js",
+    "start:legacy": "PORT=3001 next start",
     "lint": "next lint",
     "seed": "node prisma/seed.js",
     "test": "jest",

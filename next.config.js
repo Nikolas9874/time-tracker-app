@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = { 
-  output: "standalone", 
-  reactStrictMode: true, 
+const nextConfig = {
+  reactStrictMode: true,
+  output: 'standalone',
+  env: {
+    PORT: process.env.PORT || 3001
+  },
+  skipMiddlewareUrlNormalize: true,
+  skipTrailingSlashRedirect: true,
   images: { 
     unoptimized: true 
   },
@@ -11,6 +16,6 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true
   }
-} 
+}
 
 module.exports = nextConfig
