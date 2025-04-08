@@ -33,6 +33,18 @@ export async function authenticateUser(username: string, password: string): Prom
 
 // Создание новой сессии для пользователя
 export function createSession(user: User): Session {
+  // Находим активные сессии пользователя
+  const existingSessions = sessions.filter(s => s.userId === user.id);
+  
+  if (existingSessions.length > 0) {
+    console.log(`Найдены существующие сессии для пользователя ${user.username} (${existingSessions.length}). Они будут завершены.`);
+    
+    // Логируем информацию о завершении сессий
+    existingSessions.forEach(session => {
+      console.log(`Завершена сессия ${session.id}, созданная ${session.createdAt.toISOString()}`);
+    });
+  }
+  
   // Удаляем старые сессии пользователя
   sessions = sessions.filter(s => s.userId !== user.id);
   
@@ -40,7 +52,8 @@ export function createSession(user: User): Session {
   const token = jwt.sign(
     { 
       userId: user.id,
-      role: user.role
+      role: user.role,
+      sessionId: uuidv4() // Добавляем уникальный идентификатор сессии в токен
     }, 
     JWT_SECRET, 
     { expiresIn: '7d' }
@@ -57,7 +70,9 @@ export function createSession(user: User): Session {
     expiresAt,
     createdAt: new Date(),
     updatedAt: new Date(),
-    user
+    user,
+    userAgent: 'Unknown', // Можно добавить информацию о браузере/устройстве
+    ipAddress: 'Unknown'  // Можно добавить информацию об IP адресе
   };
   
   // Сохраняем сессию в "базе данных"
@@ -230,4 +245,32 @@ export async function changeUserPassword(userId: string, currentPassword: string
   };
   
   return true;
+}
+
+// Проверка наличия активной сессии пользователя
+export function hasActiveSession(userId: string): boolean {
+  // Ищем активные сессии пользователя
+  const userSessions = sessions.filter(s => s.userId === userId);
+  
+  // Проверяем, есть ли активные сессии и не истек ли их срок
+  const currentDate = new Date();
+  const activeSessions = userSessions.filter(s => s.expiresAt > currentDate);
+  
+  return activeSessions.length > 0;
+}
+
+// Получение всех активных сессий пользователя
+export function getUserActiveSessions(userId: string): Session[] {
+  const currentDate = new Date();
+  return sessions.filter(s => s.userId === userId && s.expiresAt > currentDate);
+}
+
+// Завершение всех сессий пользователя
+export function endAllUserSessions(userId: string): number {
+  const userSessionsCount = sessions.filter(s => s.userId === userId).length;
+  
+  // Удаляем все сессии пользователя
+  sessions = sessions.filter(s => s.userId !== userId);
+  
+  return userSessionsCount;
 } 

@@ -183,35 +183,33 @@ export default function Dashboard() {
                     </div>
 
           {/* Быстрые ссылки */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
             <Link 
               href="/timesheet" 
-              className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-md shadow-sm p-2 flex items-center justify-center transition-colors"
+              className="bg-indigo-500 hover:bg-indigo-600 text-white rounded-md shadow-sm p-3 flex items-center justify-center transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              <span className="text-xs font-medium">Табель</span>
+              <span className="font-medium">ТАБЕЛЬ</span>
             </Link>
             
             <Link 
               href="/reports" 
-              className="bg-green-500 hover:bg-green-600 text-white rounded-md shadow-sm p-2 flex items-center justify-center transition-colors"
+              className="bg-green-500 hover:bg-green-600 text-white rounded-md shadow-sm p-3 flex items-center justify-center transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              <span className="text-xs font-medium">Отчеты</span>
+              <span className="font-medium">ОТЧЕТЫ</span>
             </Link>
             
             <Link 
               href="/employees" 
-              className="bg-blue-500 hover:bg-blue-600 text-white rounded-md shadow-sm p-2 flex items-center justify-center transition-colors"
+              className="bg-blue-500 hover:bg-blue-600 text-white rounded-md shadow-sm p-3 flex items-center justify-center transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-              <span className="text-xs font-medium">Сотрудники</span>
+              <span className="font-medium">СОТРУДНИКИ</span>
+            </Link>
+            
+            <Link 
+              href="/tasks" 
+              className="bg-purple-500 hover:bg-purple-600 text-white rounded-md shadow-sm p-3 flex items-center justify-center transition-colors"
+            >
+              <span className="font-medium">ЗАДАЧИ</span>
             </Link>
           </div>
           

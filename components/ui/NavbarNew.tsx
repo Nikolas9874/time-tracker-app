@@ -8,14 +8,12 @@ import { useTheme } from '@/lib/ThemeContext'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/AuthContext'
 import { useState } from 'react'
-import ThemeToggle from './ThemeToggle'
 
-const Navbar = () => {
+const NavbarNew = () => {
   const pathname = usePathname()
   const isMobile = useMediaQuery('(max-width: 768px)')
   const { theme, toggleTheme } = useTheme()
   const { user, logout, isLoading } = useAuth()
-  const [showAccountMenu, setShowAccountMenu] = useState(false)
   
   // Навигационные ссылки
   const navLinks = [
@@ -23,14 +21,11 @@ const Navbar = () => {
     { href: '/timesheet', label: 'Табель' },
     { href: '/employees', label: 'Сотрудники' },
     { href: '/reports', label: 'Отчеты' },
+    { href: '/tasks', label: 'Задачи' },
     { href: '/settings', label: 'Настройки' },
     // Страница управления пользователями доступна только администратору
     ...(user && user.role === 'ADMIN' ? [{ href: '/admin/users', label: 'Пользователи' }] : [])
   ]
-  
-  const toggleAccountMenu = () => {
-    setShowAccountMenu(!showAccountMenu)
-  }
   
   const handleLogout = () => {
     logout()
@@ -71,9 +66,9 @@ const Navbar = () => {
             {/* Кнопка выхода */}
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded"
+              className="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-md shadow-sm font-medium"
             >
-              Выход
+              ВЫХОД
             </button>
           </div>
         </div>
@@ -82,20 +77,30 @@ const Navbar = () => {
       {/* Мобильная навигация */}
       {isMobile && (
         <div className="border-t border-gray-200 dark:border-gray-700 pt-0.5 pb-0.5 overflow-x-auto no-scrollbar">
-          <div className="flex space-x-3 px-3">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
-                href={link.href}
-                className={`whitespace-nowrap flex-shrink-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded-md
-                  ${pathname === link.href
-                    ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300'
-                    : 'text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-white'
-                  }`}
-              >
-                {link.label}
-              </Link>
-            ))}
+          <div className="flex items-center justify-between px-3">
+            <div className="flex space-x-3 overflow-x-auto">
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.href} 
+                  href={link.href}
+                  className={`whitespace-nowrap flex-shrink-0 inline-flex items-center px-2 py-1 text-xs font-medium rounded-md
+                    ${pathname === link.href
+                      ? 'bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300'
+                      : 'text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 hover:text-gray-700 dark:hover:text-white'
+                    }`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            
+            {/* Мобильная кнопка выхода */}
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white text-xs px-2 py-1 rounded-md shadow-sm ml-2 flex-shrink-0"
+            >
+              Выход
+            </button>
           </div>
         </div>
       )}
@@ -103,4 +108,4 @@ const Navbar = () => {
   )
 }
 
-export default Navbar 
+export default NavbarNew 

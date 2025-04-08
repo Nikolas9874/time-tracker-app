@@ -43,16 +43,41 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Сначала пробуем загрузить из localStorage
-        const savedToken = localStorage.getItem('auth_token');
-        console.log('Инициализация auth: токен из localStorage:', savedToken ? 'Присутствует' : 'Отсутствует');
+        setIsLoading(true);
+        let authToken = null;
         
-        if (savedToken) {
+        // Получаем токен из cookie
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'auth_token' && value) {
+            authToken = value;
+            console.log('Инициализация auth: токен из cookie найден');
+            break;
+          }
+        }
+        
+        // Если токен не найден в cookie, пробуем localStorage 
+        if (!authToken) {
+          authToken = localStorage.getItem('auth_token');
+          console.log('Инициализация auth: токен из localStorage:', authToken ? 'Присутствует' : 'Отсутствует');
+          
+          // Если нашли в localStorage, но нет в cookie, добавляем в cookie
+          if (authToken) {
+            const expiresDate = new Date();
+            expiresDate.setDate(expiresDate.getDate() + 7);
+            document.cookie = `auth_token=${authToken}; expires=${expiresDate.toUTCString()}; path=/; SameSite=Strict`;
+            console.log('Токен из localStorage добавлен в cookie');
+          }
+        }
+        
+        // Если токен найден, проверяем его валидность
+        if (authToken) {
           try {
             // Получаем информацию о пользователе через API
             const response = await fetch('/api/auth/me', {
               headers: {
-                'Authorization': `Bearer ${savedToken}`
+                'Authorization': `Bearer ${authToken}`
               }
             });
             
@@ -60,49 +85,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const data = await response.json();
               console.log('Пользователь найден:', data.user.username);
               setUser(data.user);
-              setToken(savedToken);
+              setToken(authToken);
             } else {
               console.log('Токен недействителен, удаляем его');
               localStorage.removeItem('auth_token');
-              removeCookie('auth_token');
+              document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict';
             }
           } catch (error) {
             console.error('Ошибка при проверке токена:', error);
             localStorage.removeItem('auth_token');
-            removeCookie('auth_token');
-          }
-        } else {
-          // Если нет в localStorage, пробуем из cookie
-          const cookieToken = getCookie('auth_token');
-          console.log('Токен из cookies:', cookieToken ? 'Присутствует' : 'Отсутствует');
-          
-          if (cookieToken) {
-            try {
-              // Сохраняем в localStorage
-              localStorage.setItem('auth_token', cookieToken);
-              
-              // Получаем информацию о пользователе
-              const response = await fetch('/api/auth/me', {
-                headers: {
-                  'Authorization': `Bearer ${cookieToken}`
-                }
-              });
-              
-              if (response.ok) {
-                const data = await response.json();
-                console.log('Пользователь найден:', data.user.username);
-                setUser(data.user);
-                setToken(cookieToken);
-              } else {
-                console.log('Токен из cookie недействителен, удаляем его');
-                localStorage.removeItem('auth_token');
-                removeCookie('auth_token');
-              }
-            } catch (error) {
-              console.error('Ошибка при проверке токена из cookie:', error);
-              localStorage.removeItem('auth_token');
-              removeCookie('auth_token');
-            }
+            document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict';
           }
         }
       } catch (error) {
@@ -135,9 +127,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       console.log('Успешная авторизация, сохраняем токен');
       
-      // Сохраняем токен в localStorage и куки
+      // Сохраняем токен только в cookie (для доступа из middleware)
+      // используем правильный формат и срок действия
+      const expiresDate = new Date();
+      expiresDate.setDate(expiresDate.getDate() + 7); // 7 дней, как в JWT
+      
+      document.cookie = `auth_token=${data.token}; expires=${expiresDate.toUTCString()}; path=/; SameSite=Strict`;
+      
+      // В localStorage сохраняем только для резервного доступа
       localStorage.setItem('auth_token', data.token);
-      setCookie('auth_token', data.token);
       
       // Устанавливаем данные пользователя и токен
       setUser(data.user);
@@ -164,9 +162,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
       }
       
-      // Удаляем токен и пользователя из localStorage и куки
+      // Удаляем токен из localStorage
       localStorage.removeItem('auth_token');
-      removeCookie('auth_token');
+      
+      // Удаляем токен из cookie, устанавливая срок действия в прошлом
+      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict';
       
       // Сбрасываем состояние
       setUser(null);

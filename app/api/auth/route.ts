@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { authenticateUser, createSession, endSession } from '@/lib/auth';
+import { authenticateUser, createSession, endSession, hasActiveSession } from '@/lib/auth';
 
 // Авторизация пользователя
 export async function POST(request: NextRequest) {
@@ -24,14 +24,27 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // Проверяем, есть ли уже активная сессия
+    const hasExistingSession = hasActiveSession(user.id);
+    
     // Создаем сессию
     const session = createSession(user);
+    
+    // Получаем информацию о запросе для логирования
+    const ipAddress = request.headers.get('x-forwarded-for') || 
+                      request.headers.get('x-real-ip') || 
+                      'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
+    
+    console.log(`Вход в систему: ${user.username} (${user.role}), IP: ${ipAddress}, User-Agent: ${userAgent}`);
     
     // Возвращаем пользователя и токен
     return NextResponse.json({
       user,
       token: session.token,
-      expiresAt: session.expiresAt
+      expiresAt: session.expiresAt,
+      newSession: true,
+      previousSessionTerminated: hasExistingSession
     });
   } catch (error) {
     console.error('Ошибка авторизации:', error);

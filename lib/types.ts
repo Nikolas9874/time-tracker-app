@@ -25,6 +25,9 @@ export interface Session {
   createdAt: Date
   updatedAt: Date
   user?: User
+  userAgent?: string     // Информация об устройстве/браузере
+  ipAddress?: string     // IP-адрес пользователя 
+  lastActivity?: Date    // Время последней активности
 }
 
 export interface Employee {

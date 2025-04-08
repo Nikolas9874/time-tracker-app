@@ -1,7 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import Navbar from "@/components/ui/Navbar"
+import NavbarNew from "@/components/ui/NavbarNew"
 import { AuthProvider } from "@/lib/AuthContext"
 import { ThemeProvider } from "@/lib/ThemeContext"
 
@@ -26,7 +26,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider>
             <div className="flex flex-col min-h-screen">
-              <Navbar />
+              <NavbarNew />
               <main className="flex-grow">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
                   {children}
