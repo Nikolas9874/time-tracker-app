@@ -198,11 +198,13 @@ export default function TimesheetPage() {
         </div>
       )}
       
-      {/* Статистика */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-        <TimesheetStats workDays={workDays} />
-        <TimesheetChart workDays={workDays} />
-      </div>
+      {/* Статистика и графики - показываем только если showCharts = true */}
+      {showCharts && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+          <TimesheetStats workDays={workDays} />
+          <TimesheetChart workDays={workDays} />
+        </div>
+      )}
       
       {/* Таблица */}
       <TimesheetTable 
