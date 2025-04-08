@@ -140,6 +140,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Устанавливаем данные пользователя и токен
       setUser(data.user);
       setToken(data.token);
+      
+      // Перенаправляем на главную страницу после успешного входа
+      window.location.href = '/';
     } catch (error: any) {
       setError(error.message || 'Произошла ошибка при входе');
       console.error('Ошибка авторизации:', error);
