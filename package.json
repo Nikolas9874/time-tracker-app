@@ -10,7 +10,8 @@
     "seed": "node prisma/seed.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "migrate-to-postgres": "bash scripts/migrate-db.sh"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
